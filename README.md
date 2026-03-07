@@ -59,7 +59,7 @@ The project was built using modern web development technologies.
 
 These technologies were chosen to create a scalable, responsive, and maintainable architecture.
 
-### Project Architecture
+## Project Architecture
 
 The project is organized into modular components to maintain clarity and scalability.
 
@@ -77,13 +77,13 @@ src/
  ## Running the Project Locally
 
 ### Clone the repository:
-git clone https://github.com/yourusername/stay-with-me.git
+git clone https://github.com/defooxx/Stay-with-me.git
 
 ### Navigate to the project folder:
 cd stay-with-me
 
 ### Install Dependencies: 
-npm -install 
+npm install 
 
 ### Start the development server 
 npm run dev 
