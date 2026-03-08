@@ -1,7 +1,7 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useLanguage } from "../context/LanguageContext";
 import { motion } from "motion/react";
-import { useState } from "react";
 import {
   MessageSquare,
   BookOpen,
@@ -14,19 +14,99 @@ import {
 } from "lucide-react";
 import { Card } from "./UI/card";
 
+const QUOTE_TRANSLATION_CACHE_KEY = "home_quote_translation_cache";
+const APP_LANG_TO_TRANSLATE_LANG: Record<string, string> = {
+  en: "en",
+  es: "es",
+  fr: "fr",
+  de: "de",
+  it: "it",
+  pt: "pt",
+  hi: "hi",
+  zh: "zh-CN",
+  ja: "ja",
+  ar: "ar",
+  ne: "ne",
+};
+
 export function Home() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
-
-  // Positive messages that rotate on refresh
-  const positiveMessages = [
-    t("welcome"),
-    t("homePositiveMessage"),
+  const welcomeQuoteKeys = [
+    "welcome",
+    ...Array.from({ length: 50 }, (_, index) => `welcomeQuote${index + 1}`),
   ];
+  const [welcomeQuoteKey, setWelcomeQuoteKey] = useState("welcome");
+  const [displayQuote, setDisplayQuote] = useState("");
 
-  const [currentMessage] = useState(() => {
-    return positiveMessages[Math.floor(Math.random() * positiveMessages.length)];
-  });
+  useEffect(() => {
+    const randomIndex = Math.floor(Math.random() * welcomeQuoteKeys.length);
+    setWelcomeQuoteKey(welcomeQuoteKeys[randomIndex]);
+  }, [language]);
+
+  useEffect(() => {
+    const baseQuote = t(welcomeQuoteKey);
+    const targetLanguage = APP_LANG_TO_TRANSLATE_LANG[language] || "en";
+
+    if (targetLanguage === "en") {
+      setDisplayQuote(baseQuote);
+      return;
+    }
+
+    const cacheKey = `${targetLanguage}:${welcomeQuoteKey}:${baseQuote}`;
+    const savedCache = localStorage.getItem(QUOTE_TRANSLATION_CACHE_KEY);
+    let parsedCache: Record<string, string> = {};
+    if (savedCache) {
+      try {
+        parsedCache = JSON.parse(savedCache);
+      } catch {
+        parsedCache = {};
+      }
+    }
+
+    const cached = parsedCache[cacheKey];
+    if (cached) {
+      setDisplayQuote(cached);
+      return;
+    }
+
+    setDisplayQuote(baseQuote);
+
+    const run = async () => {
+      try {
+        const response = await fetch(
+          `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${encodeURIComponent(
+            targetLanguage
+          )}&dt=t&q=${encodeURIComponent(baseQuote)}`
+        );
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = await response.json();
+        if (!Array.isArray(data?.[0])) {
+          return;
+        }
+
+        const translated = data[0].map((chunk: any) => chunk[0] || "").join("");
+        setDisplayQuote(translated);
+
+        const updatedCache = { ...parsedCache, [cacheKey]: translated };
+        localStorage.setItem(QUOTE_TRANSLATION_CACHE_KEY, JSON.stringify(updatedCache));
+      } catch {
+        // Keep fallback quote if translation is unavailable.
+      }
+    };
+
+    run();
+  }, [language, welcomeQuoteKey, t]);
+
+  const welcomeQuote = displayQuote || t(welcomeQuoteKey);
+  const headingSizeClass =
+    welcomeQuote.length > 58
+      ? "text-2xl sm:text-3xl md:text-4xl lg:text-5xl"
+      : "text-3xl sm:text-4xl md:text-5xl lg:text-6xl";
 
   const features = [
     {
@@ -130,10 +210,10 @@ export function Home() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.8 }}
-          className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl mb-8 font-light tracking-tight leading-tight"
+          className={`${headingSizeClass} mb-8 font-light tracking-tight leading-tight`}
         >
           <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 bg-clip-text text-transparent animate-gradient">
-            {currentMessage}
+            {welcomeQuote}
           </span>
         </motion.h1>
 

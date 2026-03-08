@@ -39,10 +39,22 @@ export function ReasonsToStayAlive() {
   };
 
   const inspirationalVideos = [
-    { id: "tYzMYcUty6s", title: "Never Give Up - Motivational Video" },
-    { id: "ZXsQAXx_ao0", title: "Your Life Is Worth Living" },
-    { id: "mgmVOuLgFB0", title: "This Too Shall Pass" },
-    { id: "kGOQfLFzJj8", title: "You Are Not Alone" },
+    {
+      id: "nS8Lim2OlK0",
+      title: "Motivational Support Video",
+    },
+    {
+      id: "mgmVOuLgFB0",
+      title: "This Too Shall Pass",
+    },
+    {
+      id: "1P3ZgLOy-w8",
+      title: "You Are Not Alone",
+    },
+    {
+      id: "Bl1FOKpFY2Q",
+      title: "Life Motivation Video",
+    },
   ];
 
   return (
@@ -162,7 +174,7 @@ export function ReasonsToStayAlive() {
               <div className="space-y-6">
                 {inspirationalVideos.map((video, index) => (
                   <motion.div
-                    key={video.id}
+                    key={video.title}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
@@ -179,6 +191,16 @@ export function ReasonsToStayAlive() {
                         allowFullScreen
                         className="absolute top-0 left-0 w-full h-full rounded-lg"
                       />
+                    </div>
+                    <div className="px-2 py-2">
+                      <a
+                        href={`https://www.youtube.com/watch?v=${video.id}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-800 underline"
+                      >
+                        Watch on YouTube
+                      </a>
                     </div>
                   </motion.div>
                 ))}

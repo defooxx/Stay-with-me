@@ -145,9 +145,13 @@ export function ReadLetters() {
         transition={{ duration: 0.3 }}
       >
         <Card className="p-8 md:p-12 bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 shadow-xl">
-          <div className="mb-6">
+          <motion.div
+            className="mb-6"
+            animate={{ scale: [1, 1.14, 1] }}
+            transition={{ duration: 1.15, repeat: Infinity, ease: "easeInOut" }}
+          >
             <Heart className="size-12 text-pink-500 fill-pink-500 mx-auto mb-4" />
-          </div>
+          </motion.div>
 
           <div className="prose prose-lg max-w-none mb-8">
             <p className="text-gray-800 whitespace-pre-wrap leading-relaxed text-center">
