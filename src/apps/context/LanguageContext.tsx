@@ -1078,7 +1078,7 @@ const translations: Record<Language, Record<string, string>> = {
     postCopiedToClipboard: "تم نسخ المنشور إلى الحافظة.",
   },
   ne: {
-    appName: "मेरोसँग",
+    appName: "मसँगै रहनुहोस्",
     home: "गृहपृष्ठ",
     confess: "स्वीकारोक्ति",
     journal: "मेरो डायरी",
