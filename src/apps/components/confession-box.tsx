@@ -15,6 +15,7 @@ import {
 import { Button } from "./UI/button";
 import { Textarea } from "./UI/textarea";
 import { Card } from "./UI/card";
+import { Input } from "./UI/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "./UI/input-otp";
 import {
   Select,
@@ -24,6 +25,7 @@ import {
   SelectValue,
 } from "./UI/select";
 import { toast } from "sonner";
+import { recoveryQuestions } from "../data/mental-health";
 
 type PostComment = {
   id: number;
@@ -37,6 +39,7 @@ type ConfessionPost = {
   text: string;
   createdAt: string;
   author: string;
+  userId?: string;
   likes: number;
   likedBy: string[];
   comments: PostComment[];
@@ -62,6 +65,15 @@ const APP_LANG_TO_TRANSLATE_LANG: Record<string, string> = {
 export function ConfessionBox() {
   const [step, setStep] = useState<"pin" | "mode" | "confess" | "response" | "feed">("pin");
   const [pin, setPin] = useState("");
+  const [setupPin, setSetupPin] = useState("");
+  const [setupPinConfirm, setSetupPinConfirm] = useState("");
+  const [recoveryQuestion, setRecoveryQuestion] = useState(recoveryQuestions[0]);
+  const [recoveryAnswer, setRecoveryAnswer] = useState("");
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [showForgotPin, setShowForgotPin] = useState(false);
+  const [showSharedPinNotice, setShowSharedPinNotice] = useState(false);
+  const [resetPin, setResetPin] = useState("");
+  const [resetPinConfirm, setResetPinConfirm] = useState("");
   const [mode, setMode] = useState<"ai" | "noai">("ai");
   const [confession, setConfession] = useState("");
   const [deleteOption, setDeleteOption] = useState("now");
@@ -72,7 +84,15 @@ export function ConfessionBox() {
   const [commentDrafts, setCommentDrafts] = useState<Record<number, string>>({});
   const [translationCache, setTranslationCache] = useState<Record<string, string>>({});
 
-  const { user, isAuthenticated, setConfessionPin } = useAuth();
+  const {
+    user,
+    isAuthenticated,
+    hasPrivateAccessConfigured,
+    setupPrivateAccess,
+    verifyPrivatePin,
+    verifyPinRecoveryAnswer,
+    resetPrivatePin,
+  } = useAuth();
   const { t, language } = useLanguage();
   const navigate = useNavigate();
 
@@ -114,29 +134,85 @@ export function ConfessionBox() {
   }, []);
 
   useEffect(() => {
-    // Check if user has already set a confession PIN
-    if (user?.confessionPin) {
-      // Skip to mode selection if PIN already set
-      setStep("mode");
+    if (!user?.email || !hasPrivateAccessConfigured) {
+      return;
     }
-  }, [user]);
+    const noticeKey = `shared_pin_notice_confess_${user.email}`;
+    const seen = localStorage.getItem(noticeKey);
+    if (!seen) {
+      setShowSharedPinNotice(true);
+    }
+  }, [user?.email, hasPrivateAccessConfigured]);
 
-  const handlePinSubmit = () => {
+  const handleInitialPrivateAccessSetup = async () => {
+    if (setupPin.length !== 4 || setupPinConfirm.length !== 4) {
+      toast.error("PIN must be 4 digits.");
+      return;
+    }
+
+    if (setupPin !== setupPinConfirm) {
+      toast.error("PINs do not match.");
+      return;
+    }
+
+    if (!recoveryQuestion.trim() || !recoveryAnswer.trim()) {
+      toast.error("Please set one recovery question and answer.");
+      return;
+    }
+
+    await setupPrivateAccess(setupPin, recoveryQuestion, recoveryAnswer);
+    toast.success("Private access setup complete.");
+    setStep("mode");
+  };
+
+  const handlePinSubmit = async () => {
     if (pin.length !== 4) {
       toast.error(t("pinMustBe4Digits"));
       return;
     }
 
-    if (!user?.confessionPin) {
-      // First time - set the PIN
-      setConfessionPin(pin);
-      toast.success(t("pinSetSuccess"));
-    } else if (pin !== user.confessionPin) {
+    const ok = await verifyPrivatePin(pin);
+    if (!ok) {
       toast.error(t("incorrectPin"));
+      setPin("");
+      setFailedAttempts((count) => count + 1);
       return;
     }
 
+    setFailedAttempts(0);
     setStep("mode");
+  };
+
+  const handlePinReset = async () => {
+    if (!user?.pinRecoveryQuestion) {
+      toast.error("Recovery question not available.");
+      return;
+    }
+
+    if (resetPin.length !== 4 || resetPinConfirm.length !== 4) {
+      toast.error("PIN must be 4 digits.");
+      return;
+    }
+
+    if (resetPin !== resetPinConfirm) {
+      toast.error("PINs do not match.");
+      return;
+    }
+
+    const validAnswer = await verifyPinRecoveryAnswer(recoveryAnswer);
+    if (!validAnswer) {
+      toast.error("Recovery answer does not match.");
+      return;
+    }
+
+    await resetPrivatePin(resetPin);
+    toast.success("PIN reset successful. Use your new PIN.");
+    setShowForgotPin(false);
+    setRecoveryAnswer("");
+    setResetPin("");
+    setResetPinConfirm("");
+    setPin("");
+    setFailedAttempts(0);
   };
 
   const checkForCrisisWords = (text: string) => {
@@ -275,6 +351,7 @@ export function ConfessionBox() {
       text: confession.trim(),
       createdAt: new Date().toISOString(),
       author: user?.nickname || t("anonymous"),
+      userId: user?.email,
       likes: 0,
       likedBy: [],
       comments: [],
@@ -455,7 +532,7 @@ export function ConfessionBox() {
         className="text-center mb-8"
       >
         <h1 className="text-4xl mb-3">{t("confessTitle")}</h1>
-        <p className="text-gray-600">{t("confessSubtitle")}</p>
+        <p className="text-gray-600 dark:text-slate-300">{t("confessSubtitle")}</p>
       </motion.div>
 
       <AnimatePresence mode="wait">
@@ -469,28 +546,157 @@ export function ConfessionBox() {
             <Card className="p-8">
               <div className="text-center mb-6">
                 <Lock className="size-12 text-purple-500 mx-auto mb-4" />
-                <h3 className="text-xl mb-2">{t("enterPin")}</h3>
+                <h3 className="text-xl mb-2">
+                  {hasPrivateAccessConfigured ? t("enterPin") : "Set Up Your Private Access"}
+                </h3>
                 <p className="text-sm text-gray-600">
-                  {user?.confessionPin
-                    ? t("enterPinToAccess")
-                    : t("setPinToProtectConfessions")}
+                  {hasPrivateAccessConfigured
+                    ? "Use your shared PIN to unlock the confession box."
+                    : "Set one PIN for both Journal and Confession Box, plus a recovery question."}
                 </p>
               </div>
 
-              <div className="flex justify-center mb-6">
-                <InputOTP maxLength={4} value={pin} onChange={setPin}>
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                    <InputOTPSlot index={3} />
-                  </InputOTPGroup>
-                </InputOTP>
-              </div>
-
-              <Button onClick={handlePinSubmit} className="w-full">
-                {t("unlock")}
-              </Button>
+              {!hasPrivateAccessConfigured ? (
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-2">Choose 4-digit PIN</p>
+                    <div className="flex justify-center">
+                      <InputOTP maxLength={4} value={setupPin} onChange={setSetupPin}>
+                        <InputOTPGroup>
+                          <InputOTPSlot index={0} />
+                          <InputOTPSlot index={1} />
+                          <InputOTPSlot index={2} />
+                          <InputOTPSlot index={3} />
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 mb-2">Confirm PIN</p>
+                    <div className="flex justify-center">
+                      <InputOTP maxLength={4} value={setupPinConfirm} onChange={setSetupPinConfirm}>
+                        <InputOTPGroup>
+                          <InputOTPSlot index={0} />
+                          <InputOTPSlot index={1} />
+                          <InputOTPSlot index={2} />
+                          <InputOTPSlot index={3} />
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 mb-2">Choose recovery question</p>
+                    <Select value={recoveryQuestion} onValueChange={setRecoveryQuestion}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {recoveryQuestions.map((question) => (
+                          <SelectItem key={question} value={question}>
+                            {question}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Input
+                    placeholder="Recovery answer"
+                    value={recoveryAnswer}
+                    onChange={(e) => setRecoveryAnswer(e.target.value)}
+                  />
+                  <Button onClick={handleInitialPrivateAccessSetup} className="w-full">
+                    Save and Continue
+                  </Button>
+                </div>
+              ) : showForgotPin ? (
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-700">
+                    <span className="font-medium">Recovery Question:</span>{" "}
+                    {user?.pinRecoveryQuestion}
+                  </p>
+                  <Input
+                    placeholder="Your recovery answer"
+                    value={recoveryAnswer}
+                    onChange={(e) => setRecoveryAnswer(e.target.value)}
+                  />
+                  <div>
+                    <p className="text-sm text-gray-600 mb-2">New 4-digit PIN</p>
+                    <div className="flex justify-center">
+                      <InputOTP maxLength={4} value={resetPin} onChange={setResetPin}>
+                        <InputOTPGroup>
+                          <InputOTPSlot index={0} />
+                          <InputOTPSlot index={1} />
+                          <InputOTPSlot index={2} />
+                          <InputOTPSlot index={3} />
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 mb-2">Confirm new PIN</p>
+                    <div className="flex justify-center">
+                      <InputOTP maxLength={4} value={resetPinConfirm} onChange={setResetPinConfirm}>
+                        <InputOTPGroup>
+                          <InputOTPSlot index={0} />
+                          <InputOTPSlot index={1} />
+                          <InputOTPSlot index={2} />
+                          <InputOTPSlot index={3} />
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </div>
+                  </div>
+                  <Button onClick={handlePinReset} className="w-full">
+                    Reset PIN
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowForgotPin(false)} className="w-full">
+                    Back to PIN
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  {showSharedPinNotice && (
+                    <div className="mb-4 rounded-lg border border-purple-200 bg-purple-50 p-3 text-sm text-purple-800">
+                      <p>
+                        The PIN for Confession and Journal is the same. You do not need to create a second PIN.
+                      </p>
+                      <Button
+                        variant="ghost"
+                        className="h-auto px-0 py-1 text-purple-700"
+                        onClick={() => {
+                          if (user?.email) {
+                            localStorage.setItem(`shared_pin_notice_confess_${user.email}`, "1");
+                          }
+                          setShowSharedPinNotice(false);
+                        }}
+                      >
+                        Got it
+                      </Button>
+                    </div>
+                  )}
+                  <div className="flex justify-center mb-6">
+                    <InputOTP maxLength={4} value={pin} onChange={setPin}>
+                      <InputOTPGroup>
+                        <InputOTPSlot index={0} />
+                        <InputOTPSlot index={1} />
+                        <InputOTPSlot index={2} />
+                        <InputOTPSlot index={3} />
+                      </InputOTPGroup>
+                    </InputOTP>
+                  </div>
+                  <Button onClick={handlePinSubmit} className="w-full">
+                    {t("unlock")}
+                  </Button>
+                  {failedAttempts > 0 && (
+                    <Button
+                      variant="ghost"
+                      onClick={() => setShowForgotPin(true)}
+                      className="w-full mt-3"
+                    >
+                      Forgot PIN?
+                    </Button>
+                  )}
+                </>
+              )}
             </Card>
           </motion.div>
         )}
@@ -514,13 +720,13 @@ export function ConfessionBox() {
                   }}
                   className={`p-6 rounded-xl cursor-pointer border-2 ${
                     mode === "ai"
-                      ? "border-purple-500 bg-purple-50"
-                      : "border-gray-200"
+                      ? "border-purple-500 bg-purple-50 dark:bg-purple-950/40 dark:border-purple-700"
+                      : "border-gray-200 dark:border-slate-700"
                   }`}
                 >
                   <Sparkles className="size-10 text-purple-500 mb-3" />
                   <h4 className="text-lg mb-2">{t("withAI")}</h4>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 dark:text-slate-300">
                     {t("withAIDesc")}
                   </p>
                 </motion.div>
@@ -534,13 +740,13 @@ export function ConfessionBox() {
                   }}
                   className={`p-6 rounded-xl cursor-pointer border-2 ${
                     mode === "noai"
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200"
+                      ? "border-blue-500 bg-blue-50 dark:bg-blue-950/40 dark:border-blue-700"
+                      : "border-gray-200 dark:border-slate-700"
                   }`}
                 >
                   <MessageSquare className="size-10 text-blue-500 mb-3" />
                   <h4 className="text-lg mb-2">{t("withoutAI")}</h4>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 dark:text-slate-300">
                     {t("withoutAIDesc")}
                   </p>
                 </motion.div>
@@ -614,21 +820,21 @@ export function ConfessionBox() {
 
               <div className="space-y-4">
                 {posts.length === 0 && (
-                  <p className="text-gray-600">{t("noPostsYet")}</p>
+                  <p className="text-gray-600 dark:text-slate-300">{t("noPostsYet")}</p>
                 )}
 
                 {posts.map((post) => {
                   const isLiked = post.likedBy.includes(user?.email || "guest");
 
                   return (
-                    <Card key={post.id} className="p-4 border border-gray-200">
+                    <Card key={post.id} className="p-4 border border-gray-200 dark:border-slate-700">
                       <div className="mb-3">
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-slate-400">
                           {post.author} . {new Date(post.createdAt).toLocaleString()}
                         </p>
                       </div>
 
-                      <p className="text-gray-800 mb-4">{getTranslatedPostText(post)}</p>
+                      <p className="text-gray-800 dark:text-slate-100 mb-4">{getTranslatedPostText(post)}</p>
 
                       <div className="flex gap-2 mb-4">
                         <Button
@@ -677,11 +883,11 @@ export function ConfessionBox() {
                       {post.comments.length > 0 && (
                         <div className="space-y-2">
                           {post.comments.map((comment) => (
-                            <div key={comment.id} className="bg-gray-50 rounded-lg p-3">
-                              <p className="text-sm text-gray-500 mb-1">
+                            <div key={comment.id} className="bg-gray-50 dark:bg-slate-800 rounded-lg p-3">
+                              <p className="text-sm text-gray-500 dark:text-slate-400 mb-1">
                                 {comment.author}
                               </p>
-                              <p className="text-sm text-gray-700">
+                              <p className="text-sm text-gray-700 dark:text-slate-200">
                                 {getTranslatedCommentText(post.id, comment)}
                               </p>
                             </div>
@@ -719,22 +925,22 @@ export function ConfessionBox() {
                 </div>
               </Card>
             ) : (
-              <Card className="p-8 mb-6 bg-gradient-to-br from-purple-50 to-pink-50">
+              <Card className="p-8 mb-6 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-slate-900 dark:to-slate-800">
                 <h3 className="text-2xl mb-4 text-center">{t("letterFromFriendTitle")}</h3>
                 <div className="prose prose-lg">
-                  <p className="text-gray-700 leading-relaxed">
+                  <p className="text-gray-700 dark:text-slate-200 leading-relaxed">
                     {t("dearFriend")}
                   </p>
-                  <p className="text-gray-700 leading-relaxed">
+                  <p className="text-gray-700 dark:text-slate-200 leading-relaxed">
                     {t("friendLetterPara1")}
                   </p>
-                  <p className="text-gray-700 leading-relaxed">
+                  <p className="text-gray-700 dark:text-slate-200 leading-relaxed">
                     {t("friendLetterPara2")}
                   </p>
-                  <p className="text-gray-700 leading-relaxed">
+                  <p className="text-gray-700 dark:text-slate-200 leading-relaxed">
                     {t("friendLetterPara3")}
                   </p>
-                  <p className="text-gray-700 leading-relaxed">
+                  <p className="text-gray-700 dark:text-slate-200 leading-relaxed">
                     {t("friendLetterSignature")}
                   </p>
                 </div>
@@ -742,12 +948,12 @@ export function ConfessionBox() {
             )}
 
             {mode === "ai" && (
-              <Card className="p-6 bg-gradient-to-r from-purple-100 to-pink-100 mb-6">
+              <Card className="p-6 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-slate-800 dark:to-slate-700 mb-6">
                 <div className="flex items-start gap-3">
                   <Sparkles className="size-6 text-purple-600 mt-1" />
                   <div>
                     <h4 className="font-medium mb-2">{t("aiSupportMessage")}</h4>
-                    <p className="text-gray-700">{t("aiResponse")}</p>
+                    <p className="text-gray-700 dark:text-slate-200">{t("aiResponse")}</p>
                   </div>
                 </div>
               </Card>

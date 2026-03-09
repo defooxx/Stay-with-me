@@ -1,15 +1,21 @@
 import { useState } from "react";
 import { useLanguage } from "../context/LanguageContext";
+import { useAuth } from "../context/AuthContext";
 import { motion, AnimatePresence } from "motion/react";
 import { Heart, Wind, Brain, Play, Pause } from "lucide-react";
 import { Card } from "./UI/card";
 import { Button } from "./UI/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./UI/tabs";
+import { getEmergencyContactsByCountry } from "../data/emergency-contacts";
 
 export function EmergencyResources() {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [breathingActive, setBreathingActive] = useState(false);
   const [breathingPhase, setBreathingPhase] = useState<"inhale" | "hold" | "exhale">("inhale");
+  const countryCode = user?.countryCode || "US";
+  const countryName = user?.countryName || "United States";
+  const countryEmergencyResources = getEmergencyContactsByCountry(countryCode, countryName);
 
   const startBreathingExercise = () => {
     setBreathingActive(true);
@@ -95,38 +101,29 @@ export function EmergencyResources() {
       </motion.div>
 
       {/* Crisis Hotlines */}
-      <Card className="p-6 mb-8 bg-red-50 border-red-200">
+      <Card className="p-6 mb-8 bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800">
         <div className="flex items-start gap-4">
           <Heart className="size-8 text-red-500 mt-1" />
           <div>
-            <h3 className="text-xl mb-2 text-red-800">{t("ifInCrisis")}</h3>
-            <p className="text-red-700 mb-3">
+            <h3 className="text-xl mb-2 text-red-700">{t("ifInCrisis")} - {countryName}</h3>
+            <p className="text-red-600 mb-3">
               {t("pleaseReachImmediateHelp")}
             </p>
-            <div className="space-y-2 text-sm">
-              <p>
-                <strong>National Suicide Prevention Lifeline (US):</strong>{" "}
-                <a href="tel:988" className="text-blue-600 hover:underline">
-                  988
-                </a>
-              </p>
-              <p>
-                <strong>Crisis Text Line:</strong> Text "HELLO" to{" "}
-                <a href="sms:741741" className="text-blue-600 hover:underline">
-                  741741
-                </a>
-              </p>
-              <p>
-                <strong>International:</strong>{" "}
-                <a
-                  href="https://findahelpline.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
-                >
-                  findahelpline.com
-                </a>
-              </p>
+            <div className="space-y-2 text-sm text-red-700">
+              {countryEmergencyResources.map((item) => (
+                <p key={item.label}>
+                  <strong>{item.label}:</strong>{" "}
+                  {item.text}{" "}
+                  <a
+                    href={item.link}
+                    target={item.link.startsWith("http") ? "_blank" : undefined}
+                    rel={item.link.startsWith("http") ? "noopener noreferrer" : undefined}
+                    className="text-red-600 hover:text-red-500 hover:underline font-semibold"
+                  >
+                    {item.linkLabel}
+                  </a>
+                </p>
+              ))}
             </div>
           </div>
         </div>

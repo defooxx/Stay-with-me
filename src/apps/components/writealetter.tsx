@@ -67,6 +67,7 @@ export function WriteALetter() {
       id: Date.now(),
       text: letter.trim(),
       createdAt: new Date().toISOString(),
+      authorEmail: user?.email,
       authorNickname: user?.nickname || t("anonymous"),
     };
     letters.push(newLetter);

@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router";
 import { useLanguage } from "../context/LanguageContext";
 import { useAuth } from "../context/AuthContext";
 import { motion } from "motion/react";
-import { Heart, Globe, LogOut, User } from "lucide-react";
+import { Heart, Globe, LogOut, User, Settings } from "lucide-react";
 import { Button } from "./UI/button";
 import {
   Select,
@@ -26,7 +26,7 @@ export function Navigation() {
     <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50"
+      className="bg-white/80 dark:bg-slate-900/85 backdrop-blur-md shadow-sm sticky top-0 z-50"
     >
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
@@ -78,12 +78,20 @@ export function Navigation() {
             {/* User Info */}
             {isAuthenticated ? (
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 bg-purple-100 px-3 py-1 rounded-full">
-                  <User className="size-4 text-purple-600" />
-                  <span className="text-sm text-purple-600">
+                <div className="flex items-center gap-2 bg-purple-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                  <User className="size-4 text-purple-600 dark:text-purple-300" />
+                  <span className="text-sm text-purple-600 dark:text-purple-300">
                     {user?.nickname}
                   </span>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate("/settings")}
+                >
+                  <Settings className="size-4 mr-2" />
+                  Settings
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"

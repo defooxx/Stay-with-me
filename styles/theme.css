@@ -194,4 +194,99 @@
   .animate-gradient {
     animation: gradient 6s ease infinite;
   }
+
+  @keyframes drift {
+    0% {
+      transform: translateY(0px) scale(0.9);
+      opacity: 0.3;
+    }
+    50% {
+      transform: translateY(-14px) scale(1);
+      opacity: 0.95;
+    }
+    100% {
+      transform: translateY(0px) scale(0.9);
+      opacity: 0.3;
+    }
+  }
+
+  .star-particle {
+    animation-name: drift;
+    animation-iteration-count: infinite;
+    animation-timing-function: ease-in-out;
+  }
+
+  .dark .text-gray-500 {
+    color: rgb(226 232 240) !important;
+  }
+
+  .dark .text-gray-600 {
+    color: rgb(241 245 249) !important;
+  }
+
+  .dark .text-gray-700 {
+    color: rgb(248 250 252) !important;
+  }
+
+  .dark .text-gray-800 {
+    color: rgb(255 255 255) !important;
+  }
+
+  .dark .bg-white,
+  .dark .bg-white\/60,
+  .dark .bg-white\/70,
+  .dark .bg-white\/80,
+  .dark .bg-purple-50,
+  .dark .bg-pink-50,
+  .dark .bg-blue-50,
+  .dark .bg-yellow-50,
+  .dark .bg-red-50,
+  .dark .bg-emerald-50,
+  .dark .bg-lime-50,
+  .dark .bg-gray-50 {
+    background-color: rgb(15 23 42 / 0.88);
+  }
+
+  .dark .border-gray-100,
+  .dark .border-gray-200,
+  .dark .border-purple-100,
+  .dark .border-purple-200,
+  .dark .border-blue-100,
+  .dark .border-blue-200,
+  .dark .border-red-200,
+  .dark .border-yellow-200,
+  .dark .border-emerald-100,
+  .dark .border-emerald-200 {
+    border-color: rgb(51 65 85);
+  }
+
+  @keyframes shooting {
+    0% {
+      transform: translate3d(-8vw, -8vh, 0) rotate(34deg);
+      opacity: 0;
+    }
+    8% {
+      opacity: 1;
+    }
+    30% {
+      opacity: 0;
+    }
+    100% {
+      transform: translate3d(118vw, 108vh, 0) rotate(34deg);
+      opacity: 0;
+    }
+  }
+
+  .shooting-star {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0),
+      rgba(255, 255, 255, 1),
+      rgba(147, 197, 253, 0.9)
+    );
+    border-radius: 9999px;
+    filter: drop-shadow(0 0 10px rgba(191, 219, 254, 1));
+    animation: shooting 8s linear infinite;
+  }
+
 }

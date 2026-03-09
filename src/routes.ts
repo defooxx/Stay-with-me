@@ -9,6 +9,9 @@ import { WriteALetter } from "./apps/components/writealetter";
 import { ReadLetters } from "./apps/components/read-letter";
 import { Auth } from "./apps/components/Auth";
 import { ReasonsToStayAlive } from "./apps/components/reasonstostayalive";
+import { SettingsPage } from "./apps/components/settings";
+import { KnowYourselfBetter } from "./apps/components/know-yourself-better";
+import { SeekHelpPage } from "./apps/components/seek-help";
 
 export const router = createBrowserRouter([
   {
@@ -24,6 +27,9 @@ export const router = createBrowserRouter([
       { path: "read-letters", Component: ReadLetters },
       { path: "auth", Component: Auth },
       { path: "reasons-to-stay", Component: ReasonsToStayAlive },
+      { path: "settings", Component: SettingsPage },
+      { path: "know-yourself", Component: KnowYourselfBetter },
+      { path: "seek-help", Component: SeekHelpPage },
     ],
   },
 ]);

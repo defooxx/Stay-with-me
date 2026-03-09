@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -8,12 +8,15 @@ import { Button } from "./UI/button";
 import { Input } from "./UI/input";
 import { Card } from "./UI/card";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./UI/select";
+import { getCountryOptions } from "../data/countries";
 
 export function Auth() {
   const [searchParams] = useSearchParams();
   const getModeFromQuery = (): "login" | "signup" =>
     searchParams.get("mode") === "signup" ? "signup" : "login";
   const [mode, setMode] = useState<"login" | "signup">(getModeFromQuery());
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
@@ -27,12 +30,14 @@ export function Auth() {
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [regionCode, setRegionCode] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   
-  const { login } = useAuth();
+  const { login, signup } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const countryOptions = useMemo(() => getCountryOptions(), []);
 
   useEffect(() => {
     setMode(getModeFromQuery());
@@ -46,7 +51,7 @@ export function Auth() {
   const isValidEmail = (email: string): boolean =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!isValidEmail(loginEmail)) {
       toast.error(t("invalidEmailError"));
       return;
@@ -57,12 +62,20 @@ export function Auth() {
       return;
     }
 
-    login(loginEmail.trim());
+    setIsSubmitting(true);
+    const result = await login(loginEmail.trim(), loginPassword);
+    setIsSubmitting(false);
+
+    if (!result.success) {
+      toast.error(result.message || "Unable to login right now.");
+      return;
+    }
+
     toast.success(t("welcomeBack"));
     navigate("/");
   };
 
-  const handleSignup = () => {
+  const handleSignup = async () => {
     if (!isValidEmail(signupEmail)) {
       toast.error(t("invalidEmailError"));
       return;
@@ -83,6 +96,11 @@ export function Auth() {
       return;
     }
 
+    if (!regionCode) {
+      toast.error("Please select your region/country.");
+      return;
+    }
+
     if (signupPassword !== confirmPassword) {
       toast.error(t("passwordsDoNotMatch"));
       return;
@@ -93,8 +111,23 @@ export function Auth() {
       return;
     }
 
-    // Success - show care message
-    login(signupEmail.trim());
+    setIsSubmitting(true);
+    const result = await signup({
+      email: signupEmail.trim(),
+      password: signupPassword,
+      firstName: useAnonymous ? "Anonymous" : firstName.trim(),
+      lastName: useAnonymous ? "User" : lastName.trim(),
+      countryCode: regionCode,
+      countryName: countryOptions.find((country) => country.code === regionCode)?.name || regionCode,
+      nickname: useAnonymous ? anonymousName.trim() : undefined,
+    });
+    setIsSubmitting(false);
+
+    if (!result.success) {
+      toast.error(result.message || "Signup failed. Please try again.");
+      return;
+    }
+
     toast.success(
       <div className="flex flex-col gap-2">
         <p className="font-semibold">{t("welcome")}</p>
@@ -181,7 +214,7 @@ export function Auth() {
                 </p>
               </div>
 
-              <Button onClick={handleLogin} className="w-full">
+              <Button onClick={handleLogin} className="w-full" disabled={isSubmitting}>
                 {t("login")}
               </Button>
 
@@ -226,7 +259,7 @@ export function Auth() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 bg-purple-50 p-3 rounded-lg">
+              <div className="flex items-center gap-2 bg-purple-50 dark:bg-slate-800 p-3 rounded-lg border border-purple-100 dark:border-slate-700">
                 <input
                   type="checkbox"
                   id="anonymous"
@@ -236,7 +269,7 @@ export function Auth() {
                 />
                 <label
                   htmlFor="anonymous"
-                  className="text-sm text-gray-700 cursor-pointer"
+                  className="text-sm font-medium text-gray-800 dark:text-white cursor-pointer"
                 >
                   {t("useAnonymousName")}
                 </label>
@@ -272,6 +305,24 @@ export function Auth() {
                   onChange={(e) => setSignupEmail(e.target.value)}
                   className="w-full"
                 />
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-600 mb-1 block">
+                  Region / Country
+                </label>
+                <Select value={regionCode} onValueChange={setRegionCode}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {countryOptions.map((country) => (
+                      <SelectItem key={country.code} value={country.code}>
+                        {country.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -333,7 +384,7 @@ export function Auth() {
                 </p>
               </div>
 
-              <Button onClick={handleSignup} className="w-full">
+              <Button onClick={handleSignup} className="w-full" disabled={isSubmitting}>
                 {t("createAccount")}
               </Button>
 

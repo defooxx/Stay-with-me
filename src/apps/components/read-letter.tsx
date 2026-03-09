@@ -112,7 +112,7 @@ export function ReadLetters() {
           <Card className="p-12">
             <Mail className="size-16 text-gray-300 mx-auto mb-4" />
             <h2 className="text-2xl mb-4">{t("noLettersYet")}</h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 dark:text-slate-300 mb-6">
               {t("beFirstToSharePositivity")}
             </p>
             <Button onClick={() => navigate("/write-letter")}>
@@ -135,7 +135,7 @@ export function ReadLetters() {
         className="text-center mb-8"
       >
         <h1 className="text-4xl mb-3">{t("readLettersTitle")}</h1>
-        <p className="text-gray-600">{t("readLettersSubtitle")}</p>
+        <p className="text-gray-600 dark:text-slate-300">{t("readLettersSubtitle")}</p>
       </motion.div>
 
       <motion.div
@@ -144,7 +144,7 @@ export function ReadLetters() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.3 }}
       >
-        <Card className="p-8 md:p-12 bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 shadow-xl">
+        <Card className="p-8 md:p-12 bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 shadow-xl">
           <motion.div
             className="mb-6"
             animate={{ scale: [1, 1.14, 1] }}
@@ -154,17 +154,17 @@ export function ReadLetters() {
           </motion.div>
 
           <div className="prose prose-lg max-w-none mb-8">
-            <p className="text-gray-800 whitespace-pre-wrap leading-relaxed text-center">
+            <p className="text-gray-800 dark:text-slate-100 whitespace-pre-wrap leading-relaxed text-center">
               {currentLetter.text}
             </p>
           </div>
 
           <div className="flex justify-between items-center pt-6 border-t border-gray-200">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-600 dark:text-slate-300">
               <p className="font-medium">{t("fromLabel")} {currentLetter.authorNickname}</p>
               <p>{format(new Date(currentLetter.createdAt), "PPP")}</p>
             </div>
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-gray-500 dark:text-slate-400">
               {currentLetterIndex + 1} of {letters.length}
             </div>
           </div>
@@ -192,8 +192,8 @@ export function ReadLetters() {
         transition={{ delay: 0.4 }}
         className="text-center mt-8"
       >
-        <Card className="p-6 bg-gradient-to-r from-purple-100 to-pink-100">
-          <p className="text-gray-700 mb-4">{t("shareOwnMessageCta")}</p>
+        <Card className="p-6 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-slate-800 dark:to-slate-700">
+          <p className="text-gray-700 dark:text-slate-100 mb-4">{t("shareOwnMessageCta")}</p>
           <Button onClick={() => navigate("/write-letter")}>
             <PenLine className="size-4 mr-2" />
             {t("writeLetter")}

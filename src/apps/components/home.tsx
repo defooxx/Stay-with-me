@@ -302,10 +302,10 @@ export function Home() {
                   >
                     <Icon className="size-8 text-white" />
                   </motion.div>
-                  <h3 className="text-2xl mb-3 font-medium text-gray-800">
+                  <h3 className="text-2xl mb-3 font-medium text-gray-800 dark:text-white">
                     {feature.title}
                   </h3>
-                  <p className="text-gray-600 leading-relaxed">
+                  <p className="text-gray-600 dark:text-white/85 leading-relaxed">
                     {feature.description}
                   </p>
                 </div>

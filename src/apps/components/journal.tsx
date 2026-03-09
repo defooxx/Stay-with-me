@@ -7,9 +7,12 @@ import { BookOpen, Lock, Plus, Trash2, AlertCircle } from "lucide-react";
 import { Button } from "./UI/button";
 import { Textarea } from "./UI/textarea";
 import { Card } from "./UI/card";
+import { Input } from "./UI/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "./UI/input-otp";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./UI/select";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { recoveryQuestions } from "../data/mental-health";
 
 interface JournalEntry {
   id: number;
@@ -21,11 +24,28 @@ interface JournalEntry {
 export function Journal() {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [pin, setPin] = useState("");
+  const [setupPin, setSetupPin] = useState("");
+  const [setupPinConfirm, setSetupPinConfirm] = useState("");
+  const [recoveryQuestion, setRecoveryQuestion] = useState(recoveryQuestions[0]);
+  const [recoveryAnswer, setRecoveryAnswer] = useState("");
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [showForgotPin, setShowForgotPin] = useState(false);
+  const [showSharedPinNotice, setShowSharedPinNotice] = useState(false);
+  const [resetPin, setResetPin] = useState("");
+  const [resetPinConfirm, setResetPinConfirm] = useState("");
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [newEntry, setNewEntry] = useState("");
   const [showCrisisResources, setShowCrisisResources] = useState(false);
 
-  const { user, isAuthenticated, setJournalPin } = useAuth();
+  const {
+    user,
+    isAuthenticated,
+    hasPrivateAccessConfigured,
+    setupPrivateAccess,
+    verifyPrivatePin,
+    verifyPinRecoveryAnswer,
+    resetPrivatePin,
+  } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
 
@@ -44,23 +64,86 @@ export function Journal() {
     }
   }, [isUnlocked, user]);
 
-  const handlePinSubmit = () => {
+  useEffect(() => {
+    if (!user?.email || !hasPrivateAccessConfigured) {
+      return;
+    }
+    const noticeKey = `shared_pin_notice_journal_${user.email}`;
+    const seen = localStorage.getItem(noticeKey);
+    if (!seen) {
+      setShowSharedPinNotice(true);
+    }
+  }, [user?.email, hasPrivateAccessConfigured]);
+
+  const handleInitialPrivateAccessSetup = async () => {
+    if (setupPin.length !== 4 || setupPinConfirm.length !== 4) {
+      toast.error("PIN must be 4 digits.");
+      return;
+    }
+
+    if (setupPin !== setupPinConfirm) {
+      toast.error("PINs do not match.");
+      return;
+    }
+
+    if (!recoveryQuestion.trim() || !recoveryAnswer.trim()) {
+      toast.error("Please set one recovery question and answer.");
+      return;
+    }
+
+    await setupPrivateAccess(setupPin, recoveryQuestion, recoveryAnswer);
+    toast.success("Private access setup complete.");
+    setPin("");
+    setIsUnlocked(true);
+  };
+
+  const handlePinSubmit = async () => {
     if (pin.length !== 4) {
       toast.error(t("pinMustBe4Digits"));
       return;
     }
 
-    if (!user?.journalPin) {
-      // First time - set the PIN
-      setJournalPin(pin);
-      toast.success(t("journalPinSetSuccess"));
+    const ok = await verifyPrivatePin(pin);
+    if (ok) {
       setIsUnlocked(true);
-    } else if (pin === user.journalPin) {
-      setIsUnlocked(true);
+      setFailedAttempts(0);
     } else {
       toast.error(t("incorrectPin"));
       setPin("");
+      setFailedAttempts((count) => count + 1);
     }
+  };
+
+  const handlePinReset = async () => {
+    if (!user?.pinRecoveryQuestion) {
+      toast.error("Recovery question not available.");
+      return;
+    }
+
+    if (resetPin.length !== 4 || resetPinConfirm.length !== 4) {
+      toast.error("PIN must be 4 digits.");
+      return;
+    }
+
+    if (resetPin !== resetPinConfirm) {
+      toast.error("PINs do not match.");
+      return;
+    }
+
+    const validAnswer = await verifyPinRecoveryAnswer(recoveryAnswer);
+    if (!validAnswer) {
+      toast.error("Recovery answer does not match.");
+      return;
+    }
+
+    await resetPrivatePin(resetPin);
+    toast.success("PIN reset successful. Use your new PIN to continue.");
+    setShowForgotPin(false);
+    setRecoveryAnswer("");
+    setResetPin("");
+    setResetPinConfirm("");
+    setPin("");
+    setFailedAttempts(0);
   };
 
   const checkForCrisisWords = (text: string) => {
@@ -147,6 +230,8 @@ export function Journal() {
   }
 
   if (!isUnlocked) {
+    const showSetup = !hasPrivateAccessConfigured;
+
     return (
       <div className="max-w-md mx-auto">
         <motion.div
@@ -161,28 +246,161 @@ export function Journal() {
         <Card className="p-8">
           <div className="text-center mb-6">
             <Lock className="size-12 text-blue-500 mx-auto mb-4" />
-            <h3 className="text-xl mb-2">{t("enterPin")}</h3>
+            <h3 className="text-xl mb-2">{showSetup ? "Set Up Your Private Access" : t("enterPin")}</h3>
             <p className="text-sm text-gray-600">
-              {user?.journalPin
-                  ? t("enterPinToAccessJournal")
-                  : t("setPinToProtectJournal")}
+              {showSetup
+                ? "Set one PIN for both Journal and Confession Box, plus a recovery question."
+                : "Enter your shared private PIN to unlock your journal."}
             </p>
           </div>
 
-          <div className="flex justify-center mb-6">
-            <InputOTP maxLength={4} value={pin} onChange={setPin}>
-              <InputOTPGroup>
-                <InputOTPSlot index={0} />
-                <InputOTPSlot index={1} />
-                <InputOTPSlot index={2} />
-                <InputOTPSlot index={3} />
-              </InputOTPGroup>
-            </InputOTP>
-          </div>
+          {showSetup ? (
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-600 mb-2">Choose 4-digit PIN</p>
+                <div className="flex justify-center">
+                  <InputOTP maxLength={4} value={setupPin} onChange={setSetupPin}>
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+              </div>
 
-          <Button onClick={handlePinSubmit} className="w-full">
-            {t("unlock")}
-          </Button>
+              <div>
+                <p className="text-sm text-gray-600 mb-2">Confirm PIN</p>
+                <div className="flex justify-center">
+                  <InputOTP maxLength={4} value={setupPinConfirm} onChange={setSetupPinConfirm}>
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-600 mb-2">Choose recovery question</p>
+                <Select value={recoveryQuestion} onValueChange={setRecoveryQuestion}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {recoveryQuestions.map((question) => (
+                      <SelectItem key={question} value={question}>
+                        {question}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Input
+                placeholder="Recovery answer"
+                value={recoveryAnswer}
+                onChange={(e) => setRecoveryAnswer(e.target.value)}
+              />
+              <Button onClick={handleInitialPrivateAccessSetup} className="w-full">
+                Save and Unlock
+              </Button>
+            </div>
+          ) : showForgotPin ? (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-700">
+                <span className="font-medium">Recovery Question:</span>{" "}
+                {user?.pinRecoveryQuestion}
+              </p>
+              <Input
+                placeholder="Your recovery answer"
+                value={recoveryAnswer}
+                onChange={(e) => setRecoveryAnswer(e.target.value)}
+              />
+
+              <div>
+                <p className="text-sm text-gray-600 mb-2">New 4-digit PIN</p>
+                <div className="flex justify-center">
+                  <InputOTP maxLength={4} value={resetPin} onChange={setResetPin}>
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-600 mb-2">Confirm new PIN</p>
+                <div className="flex justify-center">
+                  <InputOTP maxLength={4} value={resetPinConfirm} onChange={setResetPinConfirm}>
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+              </div>
+
+              <Button onClick={handlePinReset} className="w-full">
+                Reset PIN
+              </Button>
+              <Button variant="outline" onClick={() => setShowForgotPin(false)} className="w-full">
+                Back to PIN
+              </Button>
+            </div>
+          ) : (
+            <>
+              {showSharedPinNotice && (
+                <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
+                  <p>
+                    The PIN for Journal and Confession is the same. You do not need to create a second PIN.
+                  </p>
+                  <Button
+                    variant="ghost"
+                    className="h-auto px-0 py-1 text-blue-700"
+                    onClick={() => {
+                      if (user?.email) {
+                        localStorage.setItem(`shared_pin_notice_journal_${user.email}`, "1");
+                      }
+                      setShowSharedPinNotice(false);
+                    }}
+                  >
+                    Got it
+                  </Button>
+                </div>
+              )}
+              <div className="flex justify-center mb-6">
+                <InputOTP maxLength={4} value={pin} onChange={setPin}>
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+
+              <Button onClick={handlePinSubmit} className="w-full">
+                {t("unlock")}
+              </Button>
+              {failedAttempts > 0 && (
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowForgotPin(true)}
+                  className="w-full mt-3"
+                >
+                  Forgot PIN?
+                </Button>
+              )}
+            </>
+          )}
         </Card>
       </div>
     );
