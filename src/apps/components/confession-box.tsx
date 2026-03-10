@@ -505,19 +505,28 @@ export function ConfessionBox() {
         animate={{ opacity: 1 }}
         className="max-w-2xl mx-auto"
       >
-        <Card className="p-8 border-red-200 bg-red-50">
+        <Card className="p-8 border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-950/35">
           <div className="text-center">
             <AlertCircle className="size-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-2xl mb-4">{t("crisisMessage")}</h2>
-            <p className="text-gray-700 mb-6">
+            <h2 className="text-2xl mb-4 text-slate-900 dark:text-red-100">{t("crisisMessage")}</h2>
+            <p className="mb-6 text-slate-700 dark:text-red-200">
               {t("youAreNotAloneReachOut")}
             </p>
-            <Button
-              onClick={() => navigate("/emergency")}
-              className="bg-red-500 hover:bg-red-600"
-            >
-              {t("viewEmergencyResources")}
-            </Button>
+            <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Button
+                onClick={() => navigate("/emergency")}
+                className="bg-red-500 hover:bg-red-600"
+              >
+                {t("viewEmergencyResources")}
+              </Button>
+              <Button
+                variant="outline"
+                className="border-red-300 text-red-700 hover:bg-red-100 dark:border-red-400/40 dark:text-red-100 dark:hover:bg-red-900/40"
+                onClick={() => navigate("/shelter")}
+              >
+                Skip Now
+              </Button>
+            </div>
           </div>
         </Card>
       </motion.div>
@@ -557,7 +566,13 @@ export function ConfessionBox() {
               </div>
 
               {!hasPrivateAccessConfigured ? (
-                <div className="space-y-4">
+                <form
+                  className="space-y-4"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    handleInitialPrivateAccessSetup();
+                  }}
+                >
                   <div>
                     <p className="text-sm text-gray-600 mb-2">Choose 4-digit PIN</p>
                     <div className="flex justify-center">
@@ -604,12 +619,18 @@ export function ConfessionBox() {
                     value={recoveryAnswer}
                     onChange={(e) => setRecoveryAnswer(e.target.value)}
                   />
-                  <Button onClick={handleInitialPrivateAccessSetup} className="w-full">
+                  <Button type="submit" className="w-full">
                     Save and Continue
                   </Button>
-                </div>
+                </form>
               ) : showForgotPin ? (
-                <div className="space-y-4">
+                <form
+                  className="space-y-4"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    handlePinReset();
+                  }}
+                >
                   <p className="text-sm text-gray-700">
                     <span className="font-medium">Recovery Question:</span>{" "}
                     {user?.pinRecoveryQuestion}
@@ -645,13 +666,13 @@ export function ConfessionBox() {
                       </InputOTP>
                     </div>
                   </div>
-                  <Button onClick={handlePinReset} className="w-full">
+                  <Button type="submit" className="w-full">
                     Reset PIN
                   </Button>
-                  <Button variant="outline" onClick={() => setShowForgotPin(false)} className="w-full">
+                  <Button type="button" variant="outline" onClick={() => setShowForgotPin(false)} className="w-full">
                     Back to PIN
                   </Button>
-                </div>
+                </form>
               ) : (
                 <>
                   {showSharedPinNotice && (
@@ -674,7 +695,7 @@ export function ConfessionBox() {
                     </div>
                   )}
                   <div className="flex justify-center mb-6">
-                    <InputOTP maxLength={4} value={pin} onChange={setPin}>
+                    <InputOTP maxLength={4} value={pin} onChange={setPin} onComplete={handlePinSubmit}>
                       <InputOTPGroup>
                         <InputOTPSlot index={0} />
                         <InputOTPSlot index={1} />

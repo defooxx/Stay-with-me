@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import { useLanguage } from "../context/LanguageContext";
 import { useAuth } from "../context/AuthContext";
 import { motion, AnimatePresence } from "motion/react";
@@ -11,35 +12,26 @@ import { getEmergencyContactsByCountry } from "../data/emergency-contacts";
 export function EmergencyResources() {
   const { t } = useLanguage();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [breathingActive, setBreathingActive] = useState(false);
   const [breathingPhase, setBreathingPhase] = useState<"inhale" | "hold" | "exhale">("inhale");
   const countryCode = user?.countryCode || "US";
   const countryName = user?.countryName || "United States";
   const countryEmergencyResources = getEmergencyContactsByCountry(countryCode, countryName);
 
-  const startBreathingExercise = () => {
-    setBreathingActive(true);
-    runBreathingCycle();
-  };
+  useEffect(() => {
+    if (!breathingActive) {
+      return;
+    }
 
-  const runBreathingCycle = () => {
-    const cycle = async () => {
-      while (breathingActive) {
-        // Inhale - 4 seconds
-        setBreathingPhase("inhale");
-        await new Promise((resolve) => setTimeout(resolve, 4000));
-        
-        // Hold - 4 seconds
-        setBreathingPhase("hold");
-        await new Promise((resolve) => setTimeout(resolve, 4000));
-        
-        // Exhale - 4 seconds
-        setBreathingPhase("exhale");
-        await new Promise((resolve) => setTimeout(resolve, 4000));
-      }
-    };
-    cycle();
-  };
+    const timeoutId = window.setTimeout(() => {
+      setBreathingPhase((current) =>
+        current === "inhale" ? "hold" : current === "hold" ? "exhale" : "inhale"
+      );
+    }, 4000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [breathingActive, breathingPhase]);
 
   const calmingExercises = [
     {
@@ -105,11 +97,11 @@ export function EmergencyResources() {
         <div className="flex items-start gap-4">
           <Heart className="size-8 text-red-500 mt-1" />
           <div>
-            <h3 className="text-xl mb-2 text-red-700">{t("ifInCrisis")} - {countryName}</h3>
-            <p className="text-red-600 mb-3">
+            <h3 className="text-xl mb-2 text-red-700 dark:text-red-100">{t("ifInCrisis")} - {countryName}</h3>
+            <p className="text-red-600 dark:text-red-200 mb-3">
               {t("pleaseReachImmediateHelp")}
             </p>
-            <div className="space-y-2 text-sm text-red-700">
+            <div className="space-y-2 text-sm text-red-700 dark:text-red-100">
               {countryEmergencyResources.map((item) => (
                 <p key={item.label}>
                   <strong>{item.label}:</strong>{" "}
@@ -118,12 +110,21 @@ export function EmergencyResources() {
                     href={item.link}
                     target={item.link.startsWith("http") ? "_blank" : undefined}
                     rel={item.link.startsWith("http") ? "noopener noreferrer" : undefined}
-                    className="text-red-600 hover:text-red-500 hover:underline font-semibold"
+                    className="text-red-600 hover:text-red-500 hover:underline font-semibold dark:text-red-200 dark:hover:text-red-100"
                   >
                     {item.linkLabel}
                   </a>
                 </p>
               ))}
+            </div>
+            <div className="mt-5">
+              <Button
+                variant="outline"
+                className="border-red-300 text-red-700 hover:bg-red-100 dark:border-red-400/40 dark:text-red-100 dark:hover:bg-red-900/40"
+                onClick={() => navigate("/shelter")}
+              >
+                Skip Now
+              </Button>
             </div>
           </div>
         </div>
@@ -191,7 +192,12 @@ export function EmergencyResources() {
 
               <Button
                 size="lg"
-                onClick={() => setBreathingActive(!breathingActive)}
+                onClick={() => {
+                  setBreathingActive((current) => !current);
+                  if (!breathingActive) {
+                    setBreathingPhase("inhale");
+                  }
+                }}
                 className="w-48"
               >
                 {breathingActive ? (

@@ -78,12 +78,16 @@ export function Navigation() {
             {/* User Info */}
             {isAuthenticated ? (
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 bg-purple-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                <button
+                  type="button"
+                  onClick={() => navigate("/settings?tab=profile")}
+                  className="flex items-center gap-2 rounded-full bg-purple-100 px-3 py-1 dark:bg-slate-800"
+                >
                   <User className="size-4 text-purple-600 dark:text-purple-300" />
                   <span className="text-sm text-purple-600 dark:text-purple-300">
                     {user?.nickname}
                   </span>
-                </div>
+                </button>
                 <Button
                   variant="ghost"
                   size="sm"

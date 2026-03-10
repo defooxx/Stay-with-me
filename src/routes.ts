@@ -12,6 +12,7 @@ import { ReasonsToStayAlive } from "./apps/components/reasonstostayalive";
 import { SettingsPage } from "./apps/components/settings";
 import { KnowYourselfBetter } from "./apps/components/know-yourself-better";
 import { SeekHelpPage } from "./apps/components/seek-help";
+import { EmotionalShelter } from "./apps/components/emotional-shelter";
 
 export const router = createBrowserRouter([
   {
@@ -31,5 +32,9 @@ export const router = createBrowserRouter([
       { path: "know-yourself", Component: KnowYourselfBetter },
       { path: "seek-help", Component: SeekHelpPage },
     ],
+  },
+  {
+    path: "/shelter",
+    Component: EmotionalShelter,
   },
 ]);

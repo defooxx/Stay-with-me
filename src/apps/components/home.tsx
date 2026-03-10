@@ -11,6 +11,7 @@ import {
   Mail,
   Heart,
   Sparkles,
+  Waves,
 } from "lucide-react";
 import { Card } from "./UI/card";
 
@@ -157,6 +158,13 @@ export function Home() {
       description: t("homeReadLettersDesc"),
       path: "/read-letters",
       color: "from-indigo-500 to-purple-500",
+    },
+    {
+      icon: Waves,
+      title: "Self-care",
+      description: "Breathing technique and gentle care tools to help you reset.",
+      path: "/shelter",
+      color: "from-cyan-500 to-blue-500",
     },
   ];
 

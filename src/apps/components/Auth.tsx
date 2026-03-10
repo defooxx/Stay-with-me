@@ -168,7 +168,13 @@ export function Auth() {
 
           {mode === "login" ? (
             // Login Form
-            <div className="space-y-4">
+            <form
+              className="space-y-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                handleLogin();
+              }}
+            >
               <div>
                 <label className="text-sm text-gray-600 mb-1 block">
                   {t("email")}
@@ -214,22 +220,29 @@ export function Auth() {
                 </p>
               </div>
 
-              <Button onClick={handleLogin} className="w-full" disabled={isSubmitting}>
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {t("login")}
               </Button>
 
               <div className="text-center">
                 <button
+                  type="button"
                   onClick={() => setMode("signup")}
                   className="text-sm text-purple-600 hover:underline"
                 >
                   {t("dontHaveAccount")} {t("signup")}
                 </button>
               </div>
-            </div>
+            </form>
           ) : (
             // Signup Form
-            <div className="space-y-4">
+            <form
+              className="space-y-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                handleSignup();
+              }}
+            >
               <div className="flex gap-3">
                 <div className="flex-1">
                   <label className="text-sm text-gray-600 mb-1 block">
@@ -384,19 +397,20 @@ export function Auth() {
                 </p>
               </div>
 
-              <Button onClick={handleSignup} className="w-full" disabled={isSubmitting}>
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {t("createAccount")}
               </Button>
 
               <div className="text-center">
                 <button
+                  type="button"
                   onClick={() => setMode("login")}
                   className="text-sm text-purple-600 hover:underline"
                 >
                   {t("alreadyHaveAccount")} {t("login")}
                 </button>
               </div>
-            </div>
+            </form>
           )}
 
           <p className="text-xs text-gray-500 text-center mt-6">

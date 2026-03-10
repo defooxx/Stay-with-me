@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import { motion } from "motion/react";
 import { Card } from "./UI/card";
@@ -16,6 +16,17 @@ type UserPost = {
   createdAt: string;
 };
 
+type UserActivity = {
+  id: number;
+  userId: string;
+  category: string;
+  title: string;
+  detail: string;
+  createdAt: string;
+};
+
+const ACTIVITY_STORAGE_KEY = "staywithme_activities";
+
 export function SettingsPage() {
   const {
     user,
@@ -25,11 +36,13 @@ export function SettingsPage() {
     updateProfile,
   } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [nickname, setNickname] = useState("");
   const [posts, setPosts] = useState<UserPost[]>([]);
+  const [activities, setActivities] = useState<UserActivity[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -77,12 +90,18 @@ export function SettingsPage() {
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
     setPosts(merged);
+
+    const savedActivities = JSON.parse(localStorage.getItem(ACTIVITY_STORAGE_KEY) || "[]")
+      .filter((activity: UserActivity) => activity.userId === user.email)
+      .sort((a: UserActivity, b: UserActivity) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    setActivities(savedActivities);
   }, [user]);
 
   const settings = useMemo(
     () => user?.settings,
     [user]
   );
+  const activeTab = searchParams.get("tab") || "profile";
 
   if (!user) {
     return null;
@@ -99,7 +118,10 @@ export function SettingsPage() {
         <p className="text-gray-600">Manage profile, notifications, privacy, account, and app theme.</p>
       </motion.div>
 
-      <Tabs defaultValue="profile">
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setSearchParams({ tab: value })}
+      >
         <TabsList className="grid grid-cols-5 w-full">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
@@ -116,14 +138,18 @@ export function SettingsPage() {
               <Input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last name" />
               <Input value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="Nickname" />
             </div>
-            <Button
-              onClick={() => {
+            <form
+              className="space-y-4"
+              onSubmit={(event) => {
+                event.preventDefault();
                 updateProfile({ firstName: firstName.trim(), lastName: lastName.trim(), nickname: nickname.trim() });
                 toast.success("Profile updated.");
               }}
             >
-              Save Profile
-            </Button>
+              <Button type="submit">
+                Save Profile
+              </Button>
+            </form>
 
             <div className="pt-4 border-t">
               <h3 className="text-xl mb-3">Your Posts</h3>
@@ -140,6 +166,29 @@ export function SettingsPage() {
                       </span>
                     </div>
                     <p className="text-sm text-gray-700 whitespace-pre-wrap">{post.text}</p>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-4 border-t">
+              <h3 className="text-xl mb-3">Activities</h3>
+              <div className="space-y-3">
+                {activities.length === 0 && (
+                  <p className="text-gray-600">No activities yet.</p>
+                )}
+                {activities.map((activity) => (
+                  <Card key={`activity-${activity.id}`} className="p-4">
+                    <div className="flex items-center justify-between mb-2 gap-3">
+                      <div>
+                        <p className="text-sm font-medium">{activity.title}</p>
+                        <p className="text-xs text-gray-500">{activity.category}</p>
+                      </div>
+                      <span className="text-xs text-gray-500">
+                        {new Date(activity.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{activity.detail}</p>
                   </Card>
                 ))}
               </div>
