@@ -21,6 +21,10 @@ import { Card } from "./UI/card";
 import { Input } from "./UI/input";
 import { Slider } from "./UI/slider";
 import { Textarea } from "./UI/textarea";
+import {
+  useTranslatedText,
+  useTranslatedTexts,
+} from "../hooks/useRuntimeTranslation";
 
 type WaterState = {
   amountMl: number;
@@ -197,6 +201,118 @@ export function EmotionalShelter() {
   const activeTaskIndex = tasks.findIndex((task) => task.text.trim().length > 0 && !task.done);
   const activeTask = activeTaskIndex >= 0 ? tasks[activeTaskIndex] : null;
   const completedTasks = tasks.filter((task) => task.done).length;
+  const translatedBreathingLabels = useTranslatedTexts(
+    BREATHING_PHASES.map((phase) => phase.label)
+  );
+  const translatedBreathingAffirmations = useTranslatedTexts(
+    BREATHING_PHASES.map((phase) => phase.affirmation)
+  );
+  const translatedGroundingPrompts = useTranslatedTexts(
+    GROUNDING_PROMPTS.flatMap((prompt) => [prompt.question, prompt.placeholder])
+  );
+  const translatedSlideLabels = useTranslatedTexts([
+    "Breathe",
+    "Name things",
+    "Reassurance",
+    "Care",
+    "Soft reminders",
+  ]);
+  const backLabel = useTranslatedText("Back");
+  const stayWithMeLabel = useTranslatedText("Stay with me for 2 minutes");
+  const swipeLabel = useTranslatedText("Swipe left or right");
+  const noPressureLabel = useTranslatedText("No pressure. Just breathe with me.");
+  const stayWithMeTitle = useTranslatedText("Stay with me for 2 minutes.");
+  const stayWithMeDescription = useTranslatedText(
+    "Start with one breath. Inhale, hold, exhale. The sound follows you on inhale and exhale, and the pause stays quiet."
+  );
+  const secondsLabel = useTranslatedText("seconds");
+  const breathWithMe = useTranslatedText("Breath with me");
+  const breathInstructions = useTranslatedText(
+    "Inhale for 4. Hold for 4. Exhale for 4. The hold stays quiet so your body gets a real pause."
+  );
+  const restartBreathing = useTranslatedText("Restart breathing");
+  const breatheWithMeButton = useTranslatedText("Breathe with me");
+  const continueToNaming = useTranslatedText("Continue to naming things");
+  const swipeHint = useTranslatedText("You can also swipe left or use your trackpad.");
+  const namingThings = useTranslatedText("Naming things");
+  const roomTitle = useTranslatedText("Come back to the room around you.");
+  const roomDescription = useTranslatedText(
+    "Write your answers right under each question. Save them when you are ready. They will appear in your profile under Activities."
+  );
+  const notSavedYet = useTranslatedText("Not saved yet");
+  const previousLabel = useTranslatedText("Previous");
+  const saveAnswers = useTranslatedText("Save answers");
+  const nextLabel = useTranslatedText("Next");
+  const reassuranceLabel = useTranslatedText("Reassurance");
+  const reassuranceTitle = useTranslatedText("You do not have to carry everything at once.");
+  const reassuranceTexts = useTranslatedTexts([
+    "Hand on chest",
+    "Put one hand on your chest and one on your stomach. Let your shoulders drop.",
+    "Jaw soft",
+    "Relax your tongue. Keep your teeth slightly apart. You do not need to brace right now.",
+    "Gentle truth",
+    "This feeling is real, but it is not permanent. You only need the next kind minute.",
+    "Swipe left for care tools. Swipe right to return to naming things.",
+    "Care tools",
+  ]);
+  const careLabel = useTranslatedText("Care");
+  const careTitle = useTranslatedText("Choose one caring action.");
+  const waterLabel = useTranslatedText("Water");
+  const sunlightLabelText = useTranslatedText("Sunlight");
+  const focusLabel = useTranslatedText("Focus");
+  const goalLabel = useTranslatedText("Goal");
+  const drinkWater = useTranslatedText("Drink water");
+  const waterMessage = useTranslatedText(waterState.message);
+  const add250 = useTranslatedText("+250 ml");
+  const add500 = useTranslatedText("+500 ml");
+  const startAgain = useTranslatedText("Start again");
+  const waterTip = useTranslatedText(
+    "First goal is 1 L. Then 2 L. Then 3.5 L. If the day slips away, hope stays and tomorrow starts gently again from 1 L."
+  );
+  const sunlightTitle = useTranslatedText("Sit near the sunlight");
+  const sunlightDescription = useTranslatedText(
+    "A little light still counts. Let it touch your face, your hands, or just the space beside you."
+  );
+  const sunlightDone = useTranslatedText("You made room for light today.");
+  const sunlightTimerHelp = useTranslatedText("Set the timer between 1 and 30 minutes.");
+  const chooseTimer = useTranslatedText("Choose your sunlight timer");
+  const min1 = useTranslatedText("1 min");
+  const min30 = useTranslatedText("30 min");
+  const minSelected = useTranslatedText(`${sunlightMinutes} min selected`);
+  const startTimer = useTranslatedText("Start timer");
+  const resetLabel = useTranslatedText("Reset");
+  const sunlightTip = useTranslatedText(
+    "Even a short pause in daylight can tell your nervous system that the world is still here and you are still in it."
+  );
+  const priorityLabel = useTranslatedText("Priority");
+  const currentTaskOnly = useTranslatedText("Current task only");
+  const focusActiveDesc = useTranslatedText(
+    "Everything else can wait. Finish this one, then the next priority can appear."
+  );
+  const markDone = useTranslatedText("Mark done");
+  const addYourList = useTranslatedText(
+    "Add your list. The top unfinished task becomes the only task that matters on this screen."
+  );
+  const focusSummary = useTranslatedText(
+    completedTasks > 0
+      ? `Well done. You completed ${completedTasks} ${completedTasks === 1 ? "task" : "tasks"}.`
+      : "Do one thing before the next five things."
+  );
+  const resetList = useTranslatedText("Reset list");
+  const careSwipeHint = useTranslatedText("Swipe right to go back. Swipe left for soft reminders.");
+  const softReminders = useTranslatedText("Soft reminders");
+  const softReminderTexts = useTranslatedTexts([
+    "Loosen your forehead. Drop your shoulders. Uncurl your hands.",
+    "Try one sip of water before deciding what comes next.",
+    "If nothing else feels possible, stay with the breath: 4 in, 4 hold, 4 out.",
+  ]);
+  const affirmations = useTranslatedText("Affirmations");
+  const affirmationTexts = useTranslatedTexts([
+    "Do not feel down for needing care. Needing care is part of being human.",
+    "You are allowed to rest before you know what to do next.",
+    "This website can be a small home until your nervous system settles.",
+  ]);
+  const returnWhenReady = useTranslatedText("Return when you are ready");
 
   useEffect(() => {
     const previousBodyOverflow = document.body.style.overflow;
@@ -515,7 +631,7 @@ export function EmotionalShelter() {
     logActivity("Focus", "Reset focus list", "Cleared the current focus queue.");
   };
 
-  const slideLabel = ["Breathe", "Name things", "Reassurance", "Care", "Soft reminders"][slideIndex];
+  const slideLabel = translatedSlideLabels[slideIndex] || ["Breathe", "Name things", "Reassurance", "Care", "Soft reminders"][slideIndex];
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(251,113,133,0.18),_transparent_25%),linear-gradient(180deg,_#020617_0%,_#08112b_45%,_#172554_100%)] text-white">
@@ -538,16 +654,16 @@ export function EmotionalShelter() {
             onClick={() => navigate(-1)}
           >
             <ArrowLeft className="size-4" />
-            Back
+            {backLabel}
           </Button>
           <div className="rounded-full border border-rose-400/20 bg-rose-400/10 px-4 py-2 text-sm text-rose-100">
-            Stay with me for 2 minutes
+            {stayWithMeLabel}
           </div>
         </div>
 
         <div className="mb-4 flex items-center justify-between text-sm text-slate-300">
           <span>{slideLabel}</span>
-          <span>Swipe left or right</span>
+          <span>{swipeLabel}</span>
         </div>
 
         <div className="mb-5 flex items-center justify-center gap-2">
@@ -577,11 +693,11 @@ export function EmotionalShelter() {
                   <div>
                     <div className="flex items-center gap-2 text-rose-300">
                       <Heart className="size-5 fill-current" />
-                      <span className="text-sm font-medium">No pressure. Just breathe with me.</span>
+                      <span className="text-sm font-medium">{noPressureLabel}</span>
                     </div>
-                    <h1 className="mt-4 text-4xl font-semibold tracking-tight">Stay with me for 2 minutes.</h1>
+                    <h1 className="mt-4 text-4xl font-semibold tracking-tight">{stayWithMeTitle}</h1>
                     <p className="mt-3 max-w-2xl text-base leading-7 text-slate-300">
-                      Start with one breath. Inhale, hold, exhale. The sound follows you on inhale and exhale, and the pause stays quiet.
+                      {stayWithMeDescription}
                     </p>
                   </div>
 
@@ -592,9 +708,9 @@ export function EmotionalShelter() {
                         transition={{ duration: breathingPhase.seconds, ease: "easeInOut" }}
                         className="flex size-72 flex-col items-center justify-center rounded-full bg-gradient-to-br from-rose-300 via-amber-200 to-sky-300 text-slate-950 shadow-[0_20px_70px_rgba(251,113,133,0.35)]"
                       >
-                        <p className="text-lg font-medium uppercase tracking-[0.3em]">{breathingPhase.label}</p>
+                        <p className="text-lg font-medium uppercase tracking-[0.3em]">{translatedBreathingLabels[breathingIndex] || breathingPhase.label}</p>
                         <p className="mt-2 text-5xl font-semibold">{breathingPhase.seconds}</p>
-                        <p className="mt-2 text-base">seconds</p>
+                        <p className="mt-2 text-base">{secondsLabel}</p>
                       </motion.div>
                     </div>
 
@@ -602,11 +718,11 @@ export function EmotionalShelter() {
                       <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
                         <div className="flex items-center gap-2 text-sm font-medium text-sky-200">
                           <Waves className="size-4" />
-                          Breath with me
+                          {breathWithMe}
                         </div>
-                        <p className="mt-3 text-2xl font-semibold">{breathingPhase.affirmation}</p>
+                        <p className="mt-3 text-2xl font-semibold">{translatedBreathingAffirmations[breathingIndex] || breathingPhase.affirmation}</p>
                         <p className="mt-3 text-sm leading-6 text-slate-300">
-                          Inhale for 4. Hold for 4. Exhale for 4. The hold stays quiet so your body gets a real pause.
+                          {breathInstructions}
                         </p>
                       </div>
                       <div className="mx-auto flex w-full max-w-xl flex-col items-center gap-3 rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
@@ -615,18 +731,18 @@ export function EmotionalShelter() {
                           onClick={startBreathing}
                         >
                           <Play className="size-4" />
-                          {breathingActive ? "Restart breathing" : "Breathe with me"}
+                          {breathingActive ? restartBreathing : breatheWithMeButton}
                         </Button>
                         <button
                           type="button"
                           onClick={goToNextSlide}
                           className="inline-flex items-center gap-2 text-sm font-medium text-slate-300 transition hover:text-white"
                         >
-                          Continue to naming things
+                          {continueToNaming}
                           <ArrowRight className="size-4" />
                         </button>
                         <p className="text-center text-xs text-slate-400">
-                          You can also swipe left or use your trackpad.
+                          {swipeHint}
                         </p>
                       </div>
                     </div>
@@ -639,22 +755,22 @@ export function EmotionalShelter() {
                   <div>
                     <div className="flex items-center gap-2 text-amber-200">
                       <Sparkles className="size-5" />
-                      <span className="text-sm font-medium">Naming things</span>
+                      <span className="text-sm font-medium">{namingThings}</span>
                     </div>
-                    <h2 className="mt-4 text-3xl font-semibold">Come back to the room around you.</h2>
+                    <h2 className="mt-4 text-3xl font-semibold">{roomTitle}</h2>
                     <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
-                      Write your answers right under each question. Save them when you are ready. They will appear in your profile under Activities.
+                      {roomDescription}
                     </p>
                   </div>
 
                   <div className="mt-5 grid flex-1 gap-3 md:grid-cols-2">
-                    {GROUNDING_PROMPTS.map((prompt) => (
+                    {GROUNDING_PROMPTS.map((prompt, index) => (
                       <div key={prompt.key} className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
-                        <p className="text-sm font-medium text-rose-100">{prompt.question}</p>
+                        <p className="text-sm font-medium text-rose-100">{translatedGroundingPrompts[index * 2] || prompt.question}</p>
                         <Textarea
                           value={groundingAnswers[prompt.key]}
                           onChange={(event) => handleGroundingAnswer(prompt.key, event.target.value)}
-                          placeholder={prompt.placeholder}
+                          placeholder={translatedGroundingPrompts[index * 2 + 1] || prompt.placeholder}
                           className="mt-3 min-h-24 border-white/10 bg-white/10 text-white placeholder:text-slate-400"
                         />
                       </div>
@@ -662,7 +778,7 @@ export function EmotionalShelter() {
                   </div>
 
                   <div className="mt-4 flex items-center justify-between gap-3">
-                    <div className="text-sm text-emerald-200">{groundingSavedAt ? `Saved ${groundingSavedAt}` : "Not saved yet"}</div>
+                    <div className="text-sm text-emerald-200">{groundingSavedAt ? `Saved ${groundingSavedAt}` : notSavedYet}</div>
                     <div className="flex gap-3">
                       <Button
                         variant="outline"
@@ -670,17 +786,17 @@ export function EmotionalShelter() {
                         onClick={() => setSlideIndex(0)}
                       >
                         <ChevronLeft className="size-4" />
-                        Previous
+                        {previousLabel}
                       </Button>
                       <Button className="rounded-full bg-emerald-300 text-slate-950 hover:bg-emerald-200" onClick={saveGrounding}>
-                        Save answers
+                        {saveAnswers}
                       </Button>
                       <Button
                         variant="outline"
                         className="rounded-full border-white/20 bg-transparent text-white hover:bg-white/10"
                         onClick={() => setSlideIndex(2)}
                       >
-                        Next
+                        {nextLabel}
                         <ChevronRight className="size-4" />
                       </Button>
                     </div>
@@ -693,26 +809,26 @@ export function EmotionalShelter() {
                   <div>
                     <div className="flex items-center gap-2 text-rose-300">
                       <Heart className="size-5 fill-current" />
-                      <span className="text-sm font-medium">Reassurance</span>
+                      <span className="text-sm font-medium">{reassuranceLabel}</span>
                     </div>
-                    <h2 className="mt-4 text-3xl font-semibold">You do not have to carry everything at once.</h2>
+                    <h2 className="mt-4 text-3xl font-semibold">{reassuranceTitle}</h2>
                     <div className="mt-5 grid gap-4 md:grid-cols-3">
                       <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
-                        <p className="text-sm font-medium text-rose-100">Hand on chest</p>
+                        <p className="text-sm font-medium text-rose-100">{reassuranceTexts[0]}</p>
                         <p className="mt-3 text-sm leading-6 text-slate-300">
-                          Put one hand on your chest and one on your stomach. Let your shoulders drop.
+                          {reassuranceTexts[1]}
                         </p>
                       </div>
                       <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
-                        <p className="text-sm font-medium text-rose-100">Jaw soft</p>
+                        <p className="text-sm font-medium text-rose-100">{reassuranceTexts[2]}</p>
                         <p className="mt-3 text-sm leading-6 text-slate-300">
-                          Relax your tongue. Keep your teeth slightly apart. You do not need to brace right now.
+                          {reassuranceTexts[3]}
                         </p>
                       </div>
                       <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
-                        <p className="text-sm font-medium text-rose-100">Gentle truth</p>
+                        <p className="text-sm font-medium text-rose-100">{reassuranceTexts[4]}</p>
                         <p className="mt-3 text-sm leading-6 text-slate-300">
-                          This feeling is real, but it is not permanent. You only need the next kind minute.
+                          {reassuranceTexts[5]}
                         </p>
                       </div>
                     </div>
@@ -720,7 +836,7 @@ export function EmotionalShelter() {
 
                   <div className="flex items-center justify-between gap-3">
                     <p className="max-w-xl text-sm text-slate-300">
-                      Swipe left for care tools. Swipe right to return to naming things.
+                      {reassuranceTexts[6]}
                     </p>
                     <div className="flex gap-3">
                       <Button
@@ -729,10 +845,10 @@ export function EmotionalShelter() {
                         onClick={() => setSlideIndex(1)}
                       >
                         <ChevronLeft className="size-4" />
-                        Previous
+                        {previousLabel}
                       </Button>
                       <Button className="rounded-full bg-white text-slate-950 hover:bg-slate-100" onClick={() => setSlideIndex(3)}>
-                        Care tools
+                        {reassuranceTexts[7]}
                         <ChevronRight className="size-4" />
                       </Button>
                     </div>
@@ -746,9 +862,9 @@ export function EmotionalShelter() {
                     <div>
                       <div className="flex items-center gap-2 text-sky-200">
                         <Sparkles className="size-5" />
-                        <span className="text-sm font-medium">Care</span>
+                        <span className="text-sm font-medium">{careLabel}</span>
                       </div>
-                      <h2 className="mt-3 text-3xl font-semibold">Choose one caring action.</h2>
+                      <h2 className="mt-3 text-3xl font-semibold">{careTitle}</h2>
                     </div>
                     <div className="flex flex-col gap-2 md:flex-row">
                       <Button
@@ -756,21 +872,21 @@ export function EmotionalShelter() {
                         className="rounded-full"
                         onClick={() => setCareSection("water")}
                       >
-                        Water
+                        {waterLabel}
                       </Button>
                       <Button
                         variant={careSection === "sunlight" ? "secondary" : "outline"}
                         className="rounded-full"
                         onClick={() => setCareSection("sunlight")}
                       >
-                        Sunlight
+                        {sunlightLabelText}
                       </Button>
                       <Button
                         variant={careSection === "focus" ? "secondary" : "outline"}
                         className="rounded-full"
                         onClick={() => setCareSection("focus")}
                       >
-                        Focus
+                        {focusLabel}
                       </Button>
                     </div>
                   </div>
@@ -787,28 +903,28 @@ export function EmotionalShelter() {
                             <div className="relative z-10 flex w-full flex-col items-center gap-2 pb-4">
                               <Droplets className="size-8 text-sky-100" />
                               <span className="text-lg font-medium">{Math.round(waterState.amountMl / 100) / 10} L</span>
-                              <span className="text-xs text-slate-200">Goal {waterGoal / 1000} L</span>
+                              <span className="text-xs text-slate-200">{goalLabel} {waterGoal / 1000} L</span>
                             </div>
                           </div>
                         </div>
                         <div className="grid gap-4">
                           <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-5">
-                            <p className="text-2xl font-semibold">Drink water</p>
-                            <p className="mt-3 text-sm leading-6 text-slate-300">{waterState.message}</p>
+                            <p className="text-2xl font-semibold">{drinkWater}</p>
+                            <p className="mt-3 text-sm leading-6 text-slate-300">{waterMessage}</p>
                             <div className="mt-5 flex flex-wrap gap-3">
                               <Button className="rounded-full bg-sky-300 text-slate-950 hover:bg-sky-200" onClick={() => handleAddWater(250)}>
-                                +250 ml
+                                {add250}
                               </Button>
                               <Button className="rounded-full bg-sky-500 text-white hover:bg-sky-400" onClick={() => handleAddWater(500)}>
-                                +500 ml
+                                {add500}
                               </Button>
                               <Button variant="outline" className="rounded-full border-white/20 bg-transparent text-white hover:bg-white/10" onClick={handleResetWater}>
-                                Start again
+                                {startAgain}
                               </Button>
                             </div>
                           </div>
                           <div className="rounded-[1.75rem] border border-emerald-300/20 bg-emerald-300/10 p-5 text-sm leading-6 text-emerald-50">
-                            First goal is 1 L. Then 2 L. Then 3.5 L. If the day slips away, hope stays and tomorrow starts gently again from 1 L.
+                            {waterTip}
                           </div>
                         </div>
                       </div>
@@ -819,31 +935,31 @@ export function EmotionalShelter() {
                         <div className="rounded-[1.75rem] border border-amber-300/20 bg-amber-300/10 p-5">
                           <div className="flex items-center gap-2 text-amber-100">
                             <Sunrise className="size-5" />
-                            <span className="text-sm font-medium">Sit near the sunlight</span>
+                            <span className="text-sm font-medium">{sunlightTitle}</span>
                           </div>
                           <p className="mt-3 text-sm leading-6 text-amber-50/90">
-                            A little light still counts. Let it touch your face, your hands, or just the space beside you.
+                            {sunlightDescription}
                           </p>
                           <p className="mt-5 text-5xl font-semibold tracking-[0.22em]">{sunlightLabel}</p>
                           <p className="mt-2 text-sm text-amber-50/80">
-                            {sunlightRemaining === 0 ? "You made room for light today." : "Set the timer between 1 and 30 minutes."}
+                            {sunlightRemaining === 0 ? sunlightDone : sunlightTimerHelp}
                           </p>
                         </div>
                         <div className="grid gap-4">
                           <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-5">
-                            <p className="text-sm font-medium text-slate-200">Choose your sunlight timer</p>
+                            <p className="text-sm font-medium text-slate-200">{chooseTimer}</p>
                             <div className="mt-5 px-2">
                               <Slider value={[sunlightMinutes]} min={1} max={30} step={1} onValueChange={handleSunlightMinutes} />
                             </div>
                             <div className="mt-3 flex items-center justify-between text-sm text-slate-300">
-                              <span>1 min</span>
-                              <span>{sunlightMinutes} min selected</span>
-                              <span>30 min</span>
+                              <span>{min1}</span>
+                              <span>{minSelected}</span>
+                              <span>{min30}</span>
                             </div>
                             <div className="mt-5 flex flex-wrap gap-3">
                               <Button className="rounded-full bg-amber-300 text-slate-950 hover:bg-amber-200" onClick={startSunlight}>
                                 <Play className="size-4" />
-                                Start timer
+                                {startTimer}
                               </Button>
                               <Button
                                 variant="outline"
@@ -854,12 +970,12 @@ export function EmotionalShelter() {
                                 }}
                               >
                                 <TimerReset className="size-4" />
-                                Reset
+                                {resetLabel}
                               </Button>
                             </div>
                           </div>
                           <div className="rounded-[1.75rem] border border-rose-300/20 bg-rose-300/10 p-5 text-sm leading-6 text-rose-50">
-                            Even a short pause in daylight can tell your nervous system that the world is still here and you are still in it.
+                            {sunlightTip}
                           </div>
                         </div>
                       </div>
@@ -871,7 +987,7 @@ export function EmotionalShelter() {
                           {tasks.map((task, index) => (
                             <div key={task.id} className="rounded-[1.4rem] border border-white/10 bg-white/5 p-4">
                               <label className="mb-2 block text-xs uppercase tracking-[0.25em] text-slate-400">
-                                Priority {index + 1}
+                                {priorityLabel} {index + 1}
                               </label>
                               <Input
                                 value={task.text}
@@ -884,30 +1000,30 @@ export function EmotionalShelter() {
                         </div>
                         <div className="grid gap-4">
                           <div className="rounded-[1.75rem] border border-emerald-300/20 bg-emerald-300/10 p-5">
-                            <p className="text-sm font-medium uppercase tracking-[0.24em] text-emerald-50/80">Current task only</p>
+                            <p className="text-sm font-medium uppercase tracking-[0.24em] text-emerald-50/80">{currentTaskOnly}</p>
                             {activeTask ? (
                               <>
                                 <p className="mt-3 text-2xl font-semibold">{activeTask.text}</p>
                                 <p className="mt-3 text-sm leading-6 text-emerald-50/85">
-                                  Everything else can wait. Finish this one, then the next priority can appear.
+                                  {focusActiveDesc}
                                 </p>
                                 <Button className="mt-5 rounded-full bg-white text-slate-950 hover:bg-slate-100" onClick={completeTask}>
                                   <CheckCircle2 className="size-4" />
-                                  Mark done
+                                  {markDone}
                                 </Button>
                               </>
                             ) : (
                               <p className="mt-3 text-sm leading-6 text-emerald-50/85">
-                                Add your list. The top unfinished task becomes the only task that matters on this screen.
+                                {addYourList}
                               </p>
                             )}
                           </div>
                           <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-5">
                             <p className="text-sm leading-6 text-slate-300">
-                              {completedTasks > 0 ? `Well done. You completed ${completedTasks} ${completedTasks === 1 ? "task" : "tasks"}.` : "Do one thing before the next five things."}
+                              {focusSummary}
                             </p>
                             <Button variant="outline" className="mt-4 rounded-full border-white/20 bg-transparent text-white hover:bg-white/10" onClick={resetTasks}>
-                              Reset list
+                              {resetList}
                             </Button>
                           </div>
                         </div>
@@ -916,7 +1032,7 @@ export function EmotionalShelter() {
                   </div>
 
                   <div className="mt-4 flex items-center justify-between gap-3">
-                    <p className="text-sm text-slate-300">Swipe right to go back. Swipe left for soft reminders.</p>
+                    <p className="text-sm text-slate-300">{careSwipeHint}</p>
                     <div className="flex gap-3">
                       <Button
                         variant="outline"
@@ -924,10 +1040,10 @@ export function EmotionalShelter() {
                         onClick={() => setSlideIndex(2)}
                       >
                         <ChevronLeft className="size-4" />
-                        Previous
+                        {previousLabel}
                       </Button>
                       <Button className="rounded-full bg-white text-slate-950 hover:bg-slate-100" onClick={() => setSlideIndex(4)}>
-                        Next
+                        {nextLabel}
                         <ChevronRight className="size-4" />
                       </Button>
                     </div>
@@ -939,19 +1055,19 @@ export function EmotionalShelter() {
                 <Card className="flex flex-col justify-between rounded-[2rem] border-white/10 bg-slate-950/55 p-6 backdrop-blur-xl">
                   <div className="grid flex-1 gap-4 md:grid-cols-2">
                     <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-5">
-                      <p className="text-xs uppercase tracking-[0.32em] text-slate-400">Soft reminders</p>
+                      <p className="text-xs uppercase tracking-[0.32em] text-slate-400">{softReminders}</p>
                       <div className="mt-4 space-y-4 text-lg leading-8 text-slate-100">
-                        <p>Loosen your forehead. Drop your shoulders. Uncurl your hands.</p>
-                        <p>Try one sip of water before deciding what comes next.</p>
-                        <p>If nothing else feels possible, stay with the breath: 4 in, 4 hold, 4 out.</p>
+                        <p>{softReminderTexts[0]}</p>
+                        <p>{softReminderTexts[1]}</p>
+                        <p>{softReminderTexts[2]}</p>
                       </div>
                     </div>
                     <div className="rounded-[1.75rem] border border-rose-300/20 bg-rose-300/10 p-5">
-                      <p className="text-xs uppercase tracking-[0.32em] text-rose-100/70">Affirmations</p>
+                      <p className="text-xs uppercase tracking-[0.32em] text-rose-100/70">{affirmations}</p>
                       <div className="mt-4 space-y-4 text-lg leading-8 text-white">
-                        <p>Do not feel down for needing care. Needing care is part of being human.</p>
-                        <p>You are allowed to rest before you know what to do next.</p>
-                        <p>This website can be a small home until your nervous system settles.</p>
+                        <p>{affirmationTexts[0]}</p>
+                        <p>{affirmationTexts[1]}</p>
+                        <p>{affirmationTexts[2]}</p>
                       </div>
                     </div>
                   </div>
@@ -963,10 +1079,10 @@ export function EmotionalShelter() {
                       onClick={() => setSlideIndex(3)}
                     >
                       <ChevronLeft className="size-4" />
-                      Previous
+                      {previousLabel}
                     </Button>
                     <Button className="rounded-full bg-white px-8 text-slate-950 hover:bg-slate-100" onClick={() => navigate("/")}>
-                      Return when you are ready
+                      {returnWhenReady}
                     </Button>
                   </div>
                 </Card>

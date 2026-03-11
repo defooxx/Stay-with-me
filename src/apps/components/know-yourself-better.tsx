@@ -118,8 +118,8 @@ export function KnowYourselfBetter() {
         </div>
       </motion.div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
-        <Card className="p-4">
+      <div className="grid grid-cols-1 gap-6 lg:items-start lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]">
+        <Card className="self-start p-4 lg:sticky lg:top-6">
           <div className="flex items-center gap-2 mb-4">
             <Compass className="size-5 text-indigo-600" />
             <h2 className="text-xl">{feelingPathsTitle}</h2>
