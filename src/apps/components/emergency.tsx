@@ -15,6 +15,10 @@ import {
 import { useLanguage } from "../context/LanguageContext";
 import { useAuth } from "../context/AuthContext";
 import { getEmergencyContactsByCountry } from "../data/emergency-contacts";
+import {
+  useTranslatedText,
+  useTranslatedTexts,
+} from "../hooks/useRuntimeTranslation";
 import { Card } from "./UI/card";
 import { Button } from "./UI/button";
 
@@ -70,6 +74,62 @@ export function EmergencyResources() {
   const countryCode = user?.countryCode || "US";
   const countryName = user?.countryName || "United States";
   const countryEmergencyResources = getEmergencyContactsByCountry(countryCode, countryName);
+  const introCopy = useTranslatedText(
+    "This page should reduce decisions. If it is urgent, reach out now. If it is not immediate danger, use one breathing or care step next."
+  );
+  const urgentHelpFirst = useTranslatedText("Urgent help first");
+  const ifCallingFeelsHard = useTranslatedText("If calling feels hard");
+  const trustedPersonMessage = useTranslatedText(
+    "Message one trusted person in simple words: “I am not feeling safe and I need you with me.”"
+  );
+  const saferRoomMessage = useTranslatedText(
+    "Move closer to another person or a safer room."
+  );
+  const skipNowHelp = useTranslatedText(
+    "Then use `Skip Now` if you need a softer regulation screen immediately."
+  );
+  const skipNowLabel = useTranslatedText("Skip Now");
+  const oneBreathTitle = useTranslatedText("One breath at a time");
+  const oneBreathDescription = useTranslatedText(
+    "Inhale for 4, hold for 4, exhale for 4. Keep this screen simple enough that a user can follow it while distressed."
+  );
+  const breathingPhaseLabels = useTranslatedTexts(
+    BREATHING_PHASES.map((phase) => phase.label)
+  );
+  const secondsLabel = useTranslatedText("seconds");
+  const breathingPrompts = useTranslatedTexts([
+    "Take air in slowly.",
+    "Stay still. Nothing to force.",
+    "Let your shoulders loosen as you breathe out.",
+  ]);
+  const breathingFooter = useTranslatedText(
+    "This is not about doing it perfectly. It is only about lowering the intensity enough for the next safe step."
+  );
+  const pauseLabel = useTranslatedText("Pause");
+  const startBreathingLabel = useTranslatedText("Start breathing");
+  const openFullCareScreen = useTranslatedText("Open full care screen");
+  const moreSupportLabel = useTranslatedText("More support");
+  const groundingTitle = useTranslatedText("Choose one grounding action");
+  const groundingDescription = useTranslatedText(
+    "Only one needs to be visible at a time. Pick the one that feels most possible."
+  );
+  const groundingExerciseTexts = useTranslatedTexts(
+    groundingExercises.flatMap((exercise) => [exercise.title, exercise.description])
+  );
+  const currentSupportFocus = useTranslatedText("Current support focus");
+  const careToolsTitle = useTranslatedText("Care tools");
+  const careToolsDescription = useTranslatedText(
+    "If it is not an immediate crisis, move toward one body-based action instead of trying to solve everything at once."
+  );
+  const careToolTexts = useTranslatedTexts(
+    careTools.flatMap((item) => [item.title, item.description])
+  );
+  const openBreathingAndCareTools = useTranslatedText(
+    "Open breathing and care tools"
+  );
+  const emergencyResourceTexts = useTranslatedTexts(
+    countryEmergencyResources.flatMap((item) => [item.label, item.text, item.linkLabel])
+  );
 
   useEffect(() => {
     if (!breathingActive) {
@@ -92,7 +152,7 @@ export function EmergencyResources() {
       >
         <h1 className="text-4xl mb-3">{t("emergencyTitle")}</h1>
         <p className="mx-auto max-w-3xl text-gray-600 dark:text-slate-300">
-          This page should reduce decisions. If it is urgent, reach out now. If it is not immediate danger, use one breathing or care step next.
+          {introCopy}
         </p>
       </motion.div>
 
@@ -101,15 +161,15 @@ export function EmergencyResources() {
           <div>
             <div className="flex items-center gap-2 text-red-700 dark:text-red-100">
               <AlertTriangle className="size-5" />
-              <p className="text-sm font-medium uppercase tracking-[0.24em]">Urgent help first</p>
+              <p className="text-sm font-medium uppercase tracking-[0.24em]">{urgentHelpFirst}</p>
             </div>
             <h2 className="mt-3 text-2xl font-semibold text-red-900 dark:text-red-100">{t("ifInCrisis")} - {countryName}</h2>
             <p className="mt-2 text-sm leading-6 text-red-800 dark:text-red-200">{t("pleaseReachImmediateHelp")}</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {countryEmergencyResources.map((item) => (
+              {countryEmergencyResources.map((item, index) => (
                 <div key={item.label} className="rounded-2xl border border-red-200 bg-white/70 p-4 dark:border-red-800 dark:bg-red-950/20">
-                  <p className="text-sm font-medium text-red-900 dark:text-red-100">{item.label}</p>
-                  <p className="mt-1 text-sm text-red-700 dark:text-red-200">{item.text}</p>
+                  <p className="text-sm font-medium text-red-900 dark:text-red-100">{emergencyResourceTexts[index * 3] || item.label}</p>
+                  <p className="mt-1 text-sm text-red-700 dark:text-red-200">{emergencyResourceTexts[index * 3 + 1] || item.text}</p>
                   <a
                     href={item.link}
                     target={item.link.startsWith("http") ? "_blank" : undefined}
@@ -117,7 +177,7 @@ export function EmergencyResources() {
                     className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-red-700 hover:underline dark:text-red-100"
                   >
                     <Phone className="size-4" />
-                    {item.linkLabel}
+                    {emergencyResourceTexts[index * 3 + 2] || item.linkLabel}
                   </a>
                 </div>
               ))}
@@ -125,18 +185,18 @@ export function EmergencyResources() {
           </div>
 
           <div className="rounded-[1.75rem] border border-red-200 bg-white/75 p-5 dark:border-red-800 dark:bg-red-950/20">
-            <p className="text-sm font-medium text-red-900 dark:text-red-100">If calling feels hard</p>
+            <p className="text-sm font-medium text-red-900 dark:text-red-100">{ifCallingFeelsHard}</p>
             <div className="mt-3 space-y-3 text-sm leading-6 text-red-800 dark:text-red-200">
-              <p>Message one trusted person in simple words: “I am not feeling safe and I need you with me.”</p>
-              <p>Move closer to another person or a safer room.</p>
-              <p>Then use `Skip Now` if you need a softer regulation screen immediately.</p>
+              <p>{trustedPersonMessage}</p>
+              <p>{saferRoomMessage}</p>
+              <p>{skipNowHelp}</p>
             </div>
             <Button
               variant="outline"
               className="mt-4 w-full border-red-300 text-red-700 hover:bg-red-100 dark:border-red-500/30 dark:text-red-100 dark:hover:bg-red-900/40"
               onClick={() => navigate("/shelter")}
             >
-              Skip Now
+              {skipNowLabel}
             </Button>
           </div>
         </div>
@@ -148,9 +208,9 @@ export function EmergencyResources() {
             <Waves className="size-5" />
             <p className="text-sm font-medium uppercase tracking-[0.24em]">{t("breathingExercise")}</p>
           </div>
-          <h3 className="mt-3 text-2xl font-semibold">One breath at a time</h3>
+          <h3 className="mt-3 text-2xl font-semibold">{oneBreathTitle}</h3>
           <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">
-            Inhale for 4, hold for 4, exhale for 4. Keep this screen simple enough that a user can follow it while distressed.
+            {oneBreathDescription}
           </p>
 
           <div className="mt-6 flex flex-col items-center text-center">
@@ -160,20 +220,20 @@ export function EmergencyResources() {
               className="flex size-64 items-center justify-center rounded-full bg-gradient-to-br from-sky-300 via-cyan-200 to-indigo-300 shadow-[0_20px_60px_rgba(59,130,246,0.25)]"
             >
               <div className="text-slate-900">
-                <p className="text-lg font-medium uppercase tracking-[0.3em]">{breathingPhase.label}</p>
+                <p className="text-lg font-medium uppercase tracking-[0.3em]">{breathingPhaseLabels[breathingIndex] || breathingPhase.label}</p>
                 <p className="mt-2 text-5xl font-semibold">{breathingPhase.seconds}</p>
-                <p className="mt-2 text-base">seconds</p>
+                <p className="mt-2 text-base">{secondsLabel}</p>
               </div>
             </motion.div>
 
             <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left dark:border-slate-700 dark:bg-slate-900/70">
               <p className="font-medium dark:text-white">
-                {breathingPhase.key === "inhale" && "Take air in slowly."}
-                {breathingPhase.key === "hold" && "Stay still. Nothing to force."}
-                {breathingPhase.key === "exhale" && "Let your shoulders loosen as you breathe out."}
+                {breathingPhase.key === "inhale" && breathingPrompts[0]}
+                {breathingPhase.key === "hold" && breathingPrompts[1]}
+                {breathingPhase.key === "exhale" && breathingPrompts[2]}
               </p>
               <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
-                This is not about doing it perfectly. It is only about lowering the intensity enough for the next safe step.
+                {breathingFooter}
               </p>
             </div>
 
@@ -188,10 +248,10 @@ export function EmergencyResources() {
                 }}
               >
                 {breathingActive ? <Pause className="size-4 mr-2" /> : <Play className="size-4 mr-2" />}
-                {breathingActive ? "Pause" : "Start breathing"}
+                {breathingActive ? pauseLabel : startBreathingLabel}
               </Button>
               <Button variant="outline" className="rounded-full" onClick={() => navigate("/shelter")}>
-                Open full care screen
+                {openFullCareScreen}
               </Button>
             </div>
           </div>
@@ -201,11 +261,11 @@ export function EmergencyResources() {
           <Card className="p-6 bg-white/75 backdrop-blur-md dark:bg-slate-900/55">
             <div className="flex items-center gap-2 text-pink-600 dark:text-pink-300">
               <Sparkles className="size-5" />
-              <p className="text-sm font-medium uppercase tracking-[0.24em]">More support</p>
+              <p className="text-sm font-medium uppercase tracking-[0.24em]">{moreSupportLabel}</p>
             </div>
-            <h3 className="mt-3 text-2xl font-semibold">Choose one grounding action</h3>
+            <h3 className="mt-3 text-2xl font-semibold">{groundingTitle}</h3>
             <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">
-              Only one needs to be visible at a time. Pick the one that feels most possible.
+              {groundingDescription}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               {groundingExercises.map((exercise, index) => (
@@ -219,23 +279,25 @@ export function EmergencyResources() {
                       : "border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200"
                   }`}
                 >
-                  {exercise.title}
+                  {groundingExerciseTexts[index * 2] || exercise.title}
                 </button>
               ))}
             </div>
             <div className="mt-5 rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-900/60">
-              <p className="text-sm font-medium">Current support focus</p>
-              <p className="mt-3 text-base leading-7 text-gray-700 dark:text-slate-200">{selectedExercise.description}</p>
+              <p className="text-sm font-medium">{currentSupportFocus}</p>
+              <p className="mt-3 text-base leading-7 text-gray-700 dark:text-slate-200">
+                {groundingExerciseTexts[selectedExerciseIndex * 2 + 1] || selectedExercise.description}
+              </p>
             </div>
           </Card>
 
           <Card className="p-6 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
-            <h3 className="text-2xl font-semibold">Care tools</h3>
+            <h3 className="text-2xl font-semibold">{careToolsTitle}</h3>
             <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">
-              If it is not an immediate crisis, move toward one body-based action instead of trying to solve everything at once.
+              {careToolsDescription}
             </p>
             <div className="mt-4 space-y-3">
-              {careTools.map((item) => {
+              {careTools.map((item, index) => {
                 const Icon = item.icon;
                 return (
                   <div key={item.title} className="rounded-2xl border border-slate-200 bg-white/70 p-4 dark:border-slate-700 dark:bg-slate-900/60">
@@ -244,8 +306,8 @@ export function EmergencyResources() {
                         <Icon className="size-5 text-white" />
                       </div>
                       <div>
-                        <p className="font-medium">{item.title}</p>
-                        <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">{item.description}</p>
+                        <p className="font-medium">{careToolTexts[index * 2] || item.title}</p>
+                        <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">{careToolTexts[index * 2 + 1] || item.description}</p>
                       </div>
                     </div>
                   </div>
@@ -253,7 +315,7 @@ export function EmergencyResources() {
               })}
             </div>
             <Button className="mt-5 w-full" onClick={() => navigate("/shelter")}>
-              Open breathing and care tools
+              {openBreathingAndCareTools}
             </Button>
           </Card>
         </div>
