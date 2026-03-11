@@ -128,6 +128,12 @@ export function Auth() {
       return;
     }
 
+    if (!result.sessionEstablished) {
+      toast.success(result.message || "Account created. Please confirm your email, then log in.");
+      navigate("/auth?mode=login");
+      return;
+    }
+
     toast.success(
       <div className="flex flex-col gap-2">
         <p className="font-semibold">{t("welcome")}</p>

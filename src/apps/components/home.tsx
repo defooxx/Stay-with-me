@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useLanguage } from "../context/LanguageContext";
+import { useTranslatedText } from "../hooks/useRuntimeTranslation";
 import { motion } from "motion/react";
 import {
   MessageSquare,
@@ -16,21 +17,6 @@ import {
 import { Card } from "./UI/card";
 import { Button } from "./UI/button";
 
-const QUOTE_TRANSLATION_CACHE_KEY = "home_quote_translation_cache";
-const APP_LANG_TO_TRANSLATE_LANG: Record<string, string> = {
-  en: "en",
-  es: "es",
-  fr: "fr",
-  de: "de",
-  it: "it",
-  pt: "pt",
-  hi: "hi",
-  zh: "zh-CN",
-  ja: "ja",
-  ar: "ar",
-  ne: "ne",
-};
-
 export function Home() {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
@@ -39,72 +25,36 @@ export function Home() {
     ...Array.from({ length: 50 }, (_, index) => `welcomeQuote${index + 1}`),
   ];
   const [welcomeQuoteKey, setWelcomeQuoteKey] = useState("welcome");
-  const [displayQuote, setDisplayQuote] = useState("");
 
   useEffect(() => {
     const randomIndex = Math.floor(Math.random() * welcomeQuoteKeys.length);
     setWelcomeQuoteKey(welcomeQuoteKeys[randomIndex]);
   }, [language]);
 
-  useEffect(() => {
-    const baseQuote = t(welcomeQuoteKey);
-    const targetLanguage = APP_LANG_TO_TRANSLATE_LANG[language] || "en";
-
-    if (targetLanguage === "en") {
-      setDisplayQuote(baseQuote);
-      return;
-    }
-
-    const cacheKey = `${targetLanguage}:${welcomeQuoteKey}:${baseQuote}`;
-    const savedCache = localStorage.getItem(QUOTE_TRANSLATION_CACHE_KEY);
-    let parsedCache: Record<string, string> = {};
-    if (savedCache) {
-      try {
-        parsedCache = JSON.parse(savedCache);
-      } catch {
-        parsedCache = {};
-      }
-    }
-
-    const cached = parsedCache[cacheKey];
-    if (cached) {
-      setDisplayQuote(cached);
-      return;
-    }
-
-    setDisplayQuote(baseQuote);
-
-    const run = async () => {
-      try {
-        const response = await fetch(
-          `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${encodeURIComponent(
-            targetLanguage
-          )}&dt=t&q=${encodeURIComponent(baseQuote)}`
-        );
-
-        if (!response.ok) {
-          return;
-        }
-
-        const data = await response.json();
-        if (!Array.isArray(data?.[0])) {
-          return;
-        }
-
-        const translated = data[0].map((chunk: any) => chunk[0] || "").join("");
-        setDisplayQuote(translated);
-
-        const updatedCache = { ...parsedCache, [cacheKey]: translated };
-        localStorage.setItem(QUOTE_TRANSLATION_CACHE_KEY, JSON.stringify(updatedCache));
-      } catch {
-        // Keep fallback quote if translation is unavailable.
-      }
-    };
-
-    run();
-  }, [language, welcomeQuoteKey, t]);
-
-  const welcomeQuote = displayQuote || t(welcomeQuoteKey);
+  const welcomeQuote = useTranslatedText(t(welcomeQuoteKey));
+  const confessDescription = useTranslatedText(
+    "Say what is heavy in private, or share only if you want to."
+  );
+  const selfCareTitle = useTranslatedText("Self-care");
+  const selfCareDescription = useTranslatedText(
+    "Breathing technique and gentle care tools to help you reset."
+  );
+  const journalDescription = useTranslatedText(
+    "Write first. Reflect later. Your journal stays private to you."
+  );
+  const emergencyDescription = useTranslatedText(
+    "Immediate resources, guided breathing, and extra support tools."
+  );
+  const startHereLabel = useTranslatedText("Start Here");
+  const fourCalmStartingPoints = useTranslatedText("Four calm starting points");
+  const startHereDescription = useTranslatedText(
+    "Home should help users choose quickly. These are the core places most people need first."
+  );
+  const needUrgentHelp = useTranslatedText("Need urgent help?");
+  const moreSupportLabel = useTranslatedText("More Support");
+  const secondaryToolsLabel = useTranslatedText(
+    "Secondary tools when users want more"
+  );
   const headingSizeClass =
     welcomeQuote.length > 58
       ? "text-2xl sm:text-3xl md:text-4xl lg:text-5xl"
@@ -114,21 +64,21 @@ export function Home() {
     {
       icon: MessageSquare,
       title: t("confess"),
-      description: "Say what is heavy in private, or share only if you want to.",
+      description: confessDescription,
       path: "/confess",
       color: "from-purple-500 to-pink-500",
     },
     {
       icon: Waves,
-      title: "Self-care",
-      description: "Breathing technique and gentle care tools to help you reset.",
+      title: selfCareTitle,
+      description: selfCareDescription,
       path: "/shelter",
       color: "from-cyan-500 to-blue-500",
     },
     {
       icon: BookOpen,
       title: t("journal"),
-      description: "Write first. Reflect later. Your journal stays private to you.",
+      description: journalDescription,
       path: "/journal",
       color: "from-blue-500 to-cyan-500",
     },
@@ -152,7 +102,7 @@ export function Home() {
     {
       icon: HeartPulse,
       title: t("emergency"),
-      description: "Immediate resources, guided breathing, and extra support tools.",
+      description: emergencyDescription,
       path: "/emergency",
       color: "from-red-500 to-orange-500",
     },
@@ -294,10 +244,10 @@ export function Home() {
       >
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.28em] text-pink-500">Start Here</p>
-            <h3 className="mt-2 text-2xl font-medium text-gray-900 dark:text-white">Four calm starting points</h3>
+            <p className="text-xs uppercase tracking-[0.28em] text-pink-500">{startHereLabel}</p>
+            <h3 className="mt-2 text-2xl font-medium text-gray-900 dark:text-white">{fourCalmStartingPoints}</h3>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-300">
-              Home should help users choose quickly. These are the core places most people need first.
+              {startHereDescription}
             </p>
           </div>
           <Button
@@ -305,7 +255,7 @@ export function Home() {
             onClick={() => navigate("/emergency")}
             className="rounded-full"
           >
-            Need urgent help?
+            {needUrgentHelp}
           </Button>
         </div>
       </motion.div>
@@ -356,8 +306,8 @@ export function Home() {
         transition={{ delay: 1.15, duration: 0.5 }}
         className="mb-8 flex flex-col gap-2"
       >
-        <p className="text-xs uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">More Support</p>
-        <h3 className="text-2xl font-medium text-gray-900 dark:text-white">Secondary tools when users want more</h3>
+        <p className="text-xs uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">{moreSupportLabel}</p>
+        <h3 className="text-2xl font-medium text-gray-900 dark:text-white">{secondaryToolsLabel}</h3>
       </motion.div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 mb-16">

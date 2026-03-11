@@ -1,4 +1,14 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
+import {
+  getSupabaseHeaders,
+  supabaseUrl,
+} from "../lib/supabase";
 
 type ThemeMode = "light" | "dark";
 
@@ -27,13 +37,10 @@ interface User {
   settings: UserSettings;
 }
 
-interface AccountRecord extends User {
-  passwordHash: string;
-}
-
 interface AuthResult {
   success: boolean;
   message?: string;
+  sessionEstablished?: boolean;
 }
 
 interface AuthContextType {
@@ -59,10 +66,30 @@ interface AuthContextType {
   updateProfile: (profile: Partial<Pick<User, "firstName" | "lastName" | "nickname">>) => void;
 }
 
+type StoredSession = {
+  accessToken: string;
+  refreshToken: string | null;
+  user: User;
+};
+
+type SupabaseAuthUser = {
+  email?: string;
+  created_at?: string;
+  last_sign_in_at?: string;
+  user_metadata?: Record<string, unknown>;
+};
+
+type SupabaseSessionResponse = {
+  access_token?: string;
+  refresh_token?: string;
+  user?: SupabaseAuthUser;
+  error_description?: string;
+  msg?: string;
+};
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const SESSION_STORAGE_KEY = "staywithme_user";
-const ACCOUNT_STORAGE_KEY = "staywithme_accounts";
+const SESSION_STORAGE_KEY = "staywithme_supabase_session";
 const THEME_STORAGE_KEY = "staywithme_theme";
 
 const defaultUserSettings: UserSettings = {
@@ -77,12 +104,36 @@ const defaultUserSettings: UserSettings = {
 
 const generateNickname = () => {
   const adjectives = [
-    "Brave", "Kind", "Gentle", "Strong", "Peaceful", "Calm", "Bright",
-    "Hope", "Noble", "Wise", "Swift", "Silent", "Serene", "Radiant",
+    "Brave",
+    "Kind",
+    "Gentle",
+    "Strong",
+    "Peaceful",
+    "Calm",
+    "Bright",
+    "Hope",
+    "Noble",
+    "Wise",
+    "Swift",
+    "Silent",
+    "Serene",
+    "Radiant",
   ];
   const nouns = [
-    "Soul", "Heart", "Spirit", "Light", "Star", "Moon", "Sun",
-    "Phoenix", "Dream", "Ocean", "Mountain", "River", "Cloud", "Butterfly",
+    "Soul",
+    "Heart",
+    "Spirit",
+    "Light",
+    "Star",
+    "Moon",
+    "Sun",
+    "Phoenix",
+    "Dream",
+    "Ocean",
+    "Mountain",
+    "River",
+    "Cloud",
+    "Butterfly",
   ];
 
   const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
@@ -93,31 +144,6 @@ const generateNickname = () => {
 
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
-const normalizeUser = (user: User): User => ({
-  ...user,
-  firstName: user.firstName || "",
-  lastName: user.lastName || "",
-  countryCode: user.countryCode || "US",
-  countryName: user.countryName || "United States",
-  settings: { ...defaultUserSettings, ...user.settings },
-});
-
-const getAccounts = (): AccountRecord[] => {
-  const raw = localStorage.getItem(ACCOUNT_STORAGE_KEY);
-  if (!raw) {
-    return [];
-  }
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
-};
-
-const saveAccounts = (accounts: AccountRecord[]) => {
-  localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(accounts));
-};
-
 const applyTheme = (theme: ThemeMode) => {
   document.documentElement.classList.toggle("dark", theme === "dark");
   localStorage.setItem(THEME_STORAGE_KEY, theme);
@@ -125,7 +151,7 @@ const applyTheme = (theme: ThemeMode) => {
 
 const toHex = (buffer: ArrayBuffer) =>
   Array.from(new Uint8Array(buffer))
-    .map((b) => b.toString(16).padStart(2, "0"))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
     .join("");
 
 const hashText = async (text: string) => {
@@ -138,41 +164,179 @@ const hashText = async (text: string) => {
   return btoa(value);
 };
 
-const accountToUser = (account: AccountRecord): User => {
-  const { passwordHash: _passwordHash, ...user } = account;
-  return normalizeUser(user);
+const normalizeUser = (user: User): User => ({
+  ...user,
+  firstName: user.firstName || "",
+  lastName: user.lastName || "",
+  nickname: user.nickname || generateNickname(),
+  countryCode: user.countryCode || "US",
+  countryName: user.countryName || "United States",
+  settings: { ...defaultUserSettings, ...user.settings },
+});
+
+const mapSupabaseUser = (authUser: SupabaseAuthUser): User => {
+  const metadata = authUser.user_metadata || {};
+  return normalizeUser({
+    email: normalizeEmail(authUser.email || ""),
+    nickname:
+      typeof metadata.nickname === "string" && metadata.nickname.trim()
+        ? metadata.nickname
+        : generateNickname(),
+    firstName: typeof metadata.firstName === "string" ? metadata.firstName : "",
+    lastName: typeof metadata.lastName === "string" ? metadata.lastName : "",
+    countryCode:
+      typeof metadata.countryCode === "string" ? metadata.countryCode : "US",
+    countryName:
+      typeof metadata.countryName === "string"
+        ? metadata.countryName
+        : "United States",
+    createdAt: authUser.created_at || new Date().toISOString(),
+    lastLoginAt: authUser.last_sign_in_at || authUser.created_at || new Date().toISOString(),
+    privatePinHash:
+      typeof metadata.privatePinHash === "string"
+        ? metadata.privatePinHash
+        : undefined,
+    pinRecoveryQuestion:
+      typeof metadata.pinRecoveryQuestion === "string"
+        ? metadata.pinRecoveryQuestion
+        : undefined,
+    pinRecoveryAnswerHash:
+      typeof metadata.pinRecoveryAnswerHash === "string"
+        ? metadata.pinRecoveryAnswerHash
+        : undefined,
+    settings:
+      typeof metadata.settings === "object" && metadata.settings
+        ? (metadata.settings as UserSettings)
+        : defaultUserSettings,
+  });
+};
+
+const readStoredSession = (): StoredSession | null => {
+  const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(raw) as StoredSession;
+  } catch {
+    localStorage.removeItem(SESSION_STORAGE_KEY);
+    return null;
+  }
+};
+
+const buildAuthMessage = (payload: Record<string, unknown>) => {
+  const description = payload.error_description;
+  if (typeof description === "string" && description.trim()) {
+    return description;
+  }
+
+  const message = payload.msg;
+  if (typeof message === "string" && message.trim()) {
+    return message;
+  }
+
+  const error = payload.error;
+  if (typeof error === "string" && error.trim()) {
+    return error;
+  }
+
+  return "Authentication request failed.";
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState<string | null>(null);
 
-  useEffect(() => {
-    const savedUser = localStorage.getItem(SESSION_STORAGE_KEY);
-    if (!savedUser) {
-      const preferredTheme = localStorage.getItem(THEME_STORAGE_KEY) as ThemeMode | null;
-      applyTheme(preferredTheme || defaultUserSettings.theme);
-      return;
+  const clearSession = () => {
+    setUser(null);
+    setAccessToken(null);
+    setRefreshToken(null);
+    localStorage.removeItem(SESSION_STORAGE_KEY);
+    const preferredTheme = localStorage.getItem(THEME_STORAGE_KEY) as ThemeMode | null;
+    applyTheme(preferredTheme || defaultUserSettings.theme);
+  };
+
+  const saveSession = (
+    nextAccessToken: string,
+    nextRefreshToken: string | null,
+    authUser: SupabaseAuthUser
+  ) => {
+    const nextUser = mapSupabaseUser(authUser);
+    const storedSession: StoredSession = {
+      accessToken: nextAccessToken,
+      refreshToken: nextRefreshToken,
+      user: nextUser,
+    };
+
+    setUser(nextUser);
+    setAccessToken(nextAccessToken);
+    setRefreshToken(nextRefreshToken);
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(storedSession));
+    applyTheme(nextUser.settings.theme);
+  };
+
+  const fetchCurrentUser = async (token: string) => {
+    const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: getSupabaseHeaders(token),
+    });
+
+    if (!response.ok) {
+      return null;
     }
 
-    try {
-      const parsed = JSON.parse(savedUser) as User;
-      const normalized = normalizeUser(parsed);
-      const accounts = getAccounts();
-      const existsInAccounts = accounts.some((account) => account.email === normalized.email);
-      if (!existsInAccounts) {
-        localStorage.removeItem(SESSION_STORAGE_KEY);
+    return (await response.json()) as SupabaseAuthUser;
+  };
+
+  const refreshAuthSession = async (token: string) => {
+    const response = await fetch(
+      `${supabaseUrl}/auth/v1/token?grant_type=refresh_token`,
+      {
+        method: "POST",
+        headers: getSupabaseHeaders(),
+        body: JSON.stringify({ refresh_token: token }),
+      }
+    );
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return (await response.json()) as SupabaseSessionResponse;
+  };
+
+  useEffect(() => {
+    const run = async () => {
+      const stored = readStoredSession();
+      if (!stored) {
         const preferredTheme = localStorage.getItem(THEME_STORAGE_KEY) as ThemeMode | null;
         applyTheme(preferredTheme || defaultUserSettings.theme);
         return;
       }
-      setUser(normalized);
-      localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(normalized));
-      applyTheme(normalized.settings.theme);
-    } catch {
-      localStorage.removeItem(SESSION_STORAGE_KEY);
-      const preferredTheme = localStorage.getItem(THEME_STORAGE_KEY) as ThemeMode | null;
-      applyTheme(preferredTheme || defaultUserSettings.theme);
-    }
+
+      const currentUser = await fetchCurrentUser(stored.accessToken);
+      if (currentUser) {
+        saveSession(stored.accessToken, stored.refreshToken, currentUser);
+        return;
+      }
+
+      if (stored.refreshToken) {
+        const refreshed = await refreshAuthSession(stored.refreshToken);
+        if (refreshed?.access_token && refreshed.user) {
+          saveSession(
+            refreshed.access_token,
+            refreshed.refresh_token || stored.refreshToken,
+            refreshed.user
+          );
+          return;
+        }
+      }
+
+      clearSession();
+    };
+
+    void run();
   }, []);
 
   const signup: AuthContextType["signup"] = async ({
@@ -184,96 +348,111 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     countryName,
     nickname,
   }) => {
-    const normalizedEmail = normalizeEmail(email);
-    const accounts = getAccounts();
-    const existing = accounts.some((account) => account.email === normalizedEmail);
-    if (existing) {
-      return { success: false, message: "Account already exists. Please log in." };
+    const response = await fetch(`${supabaseUrl}/auth/v1/signup`, {
+      method: "POST",
+      headers: getSupabaseHeaders(),
+      body: JSON.stringify({
+        email: normalizeEmail(email),
+        password,
+        data: {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          countryCode,
+          countryName,
+          nickname: nickname?.trim() || generateNickname(),
+          settings: defaultUserSettings,
+        },
+      }),
+    });
+
+    const payload = (await response.json().catch(() => ({}))) as Record<
+      string,
+      unknown
+    > &
+      SupabaseSessionResponse;
+
+    if (!response.ok) {
+      return { success: false, message: buildAuthMessage(payload) };
     }
 
-    const now = new Date().toISOString();
-    const passwordHash = await hashText(password);
-    const createdAccount: AccountRecord = {
-      email: normalizedEmail,
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      countryCode,
-      countryName,
-      nickname: nickname?.trim() || generateNickname(),
-      createdAt: now,
-      lastLoginAt: now,
-      settings: defaultUserSettings,
-      passwordHash,
+    if (payload.access_token && payload.user) {
+      saveSession(
+        payload.access_token,
+        payload.refresh_token || null,
+        payload.user
+      );
+      return { success: true, sessionEstablished: true };
+    }
+
+    return {
+      success: true,
+      sessionEstablished: false,
+      message:
+        "Account created. Check your email to confirm it before logging in.",
     };
-
-    const updatedAccounts = [...accounts, createdAccount];
-    saveAccounts(updatedAccounts);
-
-    const nextUser = accountToUser(createdAccount);
-    setUser(nextUser);
-    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(nextUser));
-    applyTheme(nextUser.settings.theme);
-    return { success: true };
   };
 
   const login: AuthContextType["login"] = async (email, password) => {
-    const normalizedEmail = normalizeEmail(email);
-    const accounts = getAccounts();
-    const accountIndex = accounts.findIndex((account) => account.email === normalizedEmail);
-    if (accountIndex === -1) {
+    const response = await fetch(
+      `${supabaseUrl}/auth/v1/token?grant_type=password`,
+      {
+        method: "POST",
+        headers: getSupabaseHeaders(),
+        body: JSON.stringify({
+          email: normalizeEmail(email),
+          password,
+        }),
+      }
+    );
+
+    const payload = (await response.json().catch(() => ({}))) as Record<
+      string,
+      unknown
+    > &
+      SupabaseSessionResponse;
+
+    if (!response.ok || !payload.access_token || !payload.user) {
       return {
         success: false,
-        message: "This email is not registered yet. Please register first.",
+        message: buildAuthMessage(payload),
       };
     }
 
-    const submittedHash = await hashText(password);
-    const account = accounts[accountIndex];
-    if (submittedHash !== account.passwordHash) {
-      return { success: false, message: "Incorrect password. Please try again." };
-    }
-
-    const updatedAccount = {
-      ...account,
-      lastLoginAt: new Date().toISOString(),
-      settings: { ...defaultUserSettings, ...account.settings },
-    };
-    accounts[accountIndex] = updatedAccount;
-    saveAccounts(accounts);
-
-    const nextUser = accountToUser(updatedAccount);
-    setUser(nextUser);
-    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(nextUser));
-    applyTheme(nextUser.settings.theme);
-    return { success: true };
+    saveSession(payload.access_token, payload.refresh_token || null, payload.user);
+    return { success: true, sessionEstablished: true };
   };
 
   const logout = () => {
-    setUser(null);
-    localStorage.removeItem(SESSION_STORAGE_KEY);
-    const preferredTheme = localStorage.getItem(THEME_STORAGE_KEY) as ThemeMode | null;
-    applyTheme(preferredTheme || defaultUserSettings.theme);
+    const token = accessToken;
+    clearSession();
+
+    if (!token) {
+      return;
+    }
+
+    void fetch(`${supabaseUrl}/auth/v1/logout`, {
+      method: "POST",
+      headers: getSupabaseHeaders(token),
+    });
   };
 
-  const updateAccountAndSession = (updater: (current: AccountRecord) => AccountRecord) => {
-    if (!user) {
+  const updateRemoteUser = async (metadata: Record<string, unknown>) => {
+    if (!accessToken) {
       return;
     }
 
-    const accounts = getAccounts();
-    const accountIndex = accounts.findIndex((account) => account.email === user.email);
-    if (accountIndex === -1) {
+    const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      method: "PUT",
+      headers: getSupabaseHeaders(accessToken),
+      body: JSON.stringify({ data: metadata }),
+    });
+
+    if (!response.ok) {
       return;
     }
 
-    const updated = updater(accounts[accountIndex]);
-    accounts[accountIndex] = updated;
-    saveAccounts(accounts);
-
-    const nextUser = accountToUser(updated);
-    setUser(nextUser);
-    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(nextUser));
-    applyTheme(nextUser.settings.theme);
+    const payload = (await response.json()) as SupabaseAuthUser;
+    saveSession(accessToken, refreshToken, payload);
   };
 
   const setupPrivateAccess: AuthContextType["setupPrivateAccess"] = async (
@@ -284,14 +463,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) {
       return;
     }
+
     const pinHash = await hashText(pin);
     const answerHash = await hashText(answer.toLowerCase());
-    updateAccountAndSession((current) => ({
-      ...current,
+    await updateRemoteUser({
+      ...user,
+      email: undefined,
+      createdAt: undefined,
+      lastLoginAt: undefined,
       privatePinHash: pinHash,
       pinRecoveryQuestion: question.trim(),
       pinRecoveryAnswerHash: answerHash,
-    }));
+    });
   };
 
   const verifyPrivatePin: AuthContextType["verifyPrivatePin"] = async (pin) => {
@@ -302,7 +485,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return pinHash === user.privatePinHash;
   };
 
-  const verifyPinRecoveryAnswer: AuthContextType["verifyPinRecoveryAnswer"] = async (answer) => {
+  const verifyPinRecoveryAnswer: AuthContextType["verifyPinRecoveryAnswer"] = async (
+    answer
+  ) => {
     if (!user?.pinRecoveryAnswerHash) {
       return false;
     }
@@ -314,25 +499,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) {
       return;
     }
+
     const pinHash = await hashText(newPin);
-    updateAccountAndSession((current) => ({
-      ...current,
+    await updateRemoteUser({
+      ...user,
+      email: undefined,
+      createdAt: undefined,
+      lastLoginAt: undefined,
       privatePinHash: pinHash,
-    }));
+    });
   };
 
   const updateUserSettings: AuthContextType["updateUserSettings"] = (settings) => {
-    updateAccountAndSession((current) => ({
-      ...current,
-      settings: { ...defaultUserSettings, ...current.settings, ...settings },
-    }));
+    if (!user) {
+      return;
+    }
+
+    const nextSettings = {
+      ...defaultUserSettings,
+      ...user.settings,
+      ...settings,
+    };
+
+    void updateRemoteUser({
+      ...user,
+      email: undefined,
+      createdAt: undefined,
+      lastLoginAt: undefined,
+      settings: nextSettings,
+    });
   };
 
   const updateProfile: AuthContextType["updateProfile"] = (profile) => {
-    updateAccountAndSession((current) => ({
-      ...current,
+    if (!user) {
+      return;
+    }
+
+    void updateRemoteUser({
+      ...user,
+      email: undefined,
+      createdAt: undefined,
+      lastLoginAt: undefined,
       ...profile,
-    }));
+    });
   };
 
   return (

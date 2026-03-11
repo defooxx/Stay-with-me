@@ -5,6 +5,10 @@ import { Card } from "./UI/card";
 import { BookOpen, HeartPulse, ShieldCheck, Phone, Waves, UserRoundCheck } from "lucide-react";
 import { Button } from "./UI/button";
 import { helpGuides, mentalHealthTopics } from "../data/mental-health";
+import {
+  useTranslatedText,
+  useTranslatedTexts,
+} from "../hooks/useRuntimeTranslation";
 
 const genericSolutions = [
   "Maintain regular sleep, hydration, and movement routines.",
@@ -73,6 +77,77 @@ export function SeekHelpPage() {
     })),
     []
   );
+  const pageTitle = useTranslatedText("Seek Help");
+  const pageDescription = useTranslatedText(
+    "This page should help users act, not keep searching. Start with the kind of help you need, then take one next step."
+  );
+  const takeAction = useTranslatedText("Take Action");
+  const pickSupportType = useTranslatedText("Pick the type of support you need");
+  const learnAboutFeelingsFirst = useTranslatedText("Learn about feelings first");
+  const supportTrackTexts = useTranslatedTexts(
+    supportTracks.flatMap((track) => [track.title, track.description])
+  );
+  const urgentIntro = useTranslatedText(
+    "If this feels urgent, do not keep browsing. Move toward safety, another person, or emergency resources now."
+  );
+  const immediateStep1 = useTranslatedText("Immediate step 1");
+  const immediateStep1Desc = useTranslatedText(
+    "Open Emergency Resources and contact a hotline or local emergency service."
+  );
+  const immediateStep2 = useTranslatedText("Immediate step 2");
+  const immediateStep2Desc = useTranslatedText(
+    "Tell one trusted person what is happening in plain words."
+  );
+  const immediateStep3 = useTranslatedText("Immediate step 3");
+  const immediateStep3Desc = useTranslatedText(
+    "Go somewhere less isolated and put distance between yourself and anything unsafe."
+  );
+  const openEmergencyResources = useTranslatedText("Open emergency resources");
+  const selfIntro = useTranslatedText(
+    "If users need support today, give them one action they can complete in the next few minutes."
+  );
+  const breatheFirst = useTranslatedText("Breathe with the body first");
+  const breatheFirstDesc = useTranslatedText(
+    "Use guided breathing, grounding, water, and sunlight before making bigger decisions."
+  );
+  const writeItDown = useTranslatedText("Write down what is happening");
+  const writeItDownDesc = useTranslatedText(
+    "Journal the pattern, what triggered it, and what helped even a little."
+  );
+  const tellOnePerson = useTranslatedText("Tell one person early");
+  const tellOnePersonDesc = useTranslatedText(
+    "Do not wait until everything gets worse before reaching out."
+  );
+  const openBreathingAndCareTools = useTranslatedText("Open breathing and care tools");
+  const professionalIntro = useTranslatedText(
+    "If symptoms keep repeating, disrupt sleep, work, study, safety, or relationships, move toward qualified support."
+  );
+  const licensedClinician = useTranslatedText("Look for a licensed clinician");
+  const licensedClinicianDesc = useTranslatedText(
+    "Psychologist, psychiatrist, therapist, counselor, or physician depending on your needs."
+  );
+  const bringNotes = useTranslatedText("Bring notes");
+  const bringNotesDesc = useTranslatedText(
+    "Track symptoms, sleep, triggers, and duration so users do not need to remember everything on the spot."
+  );
+  const trustedMaterial = useTranslatedText(
+    "Use trusted free material between sessions"
+  );
+  const trustedMaterialDesc = useTranslatedText(
+    "Self-help resources are useful, but they should support care, not replace it."
+  );
+  const practicalGuides = useTranslatedText("Practical guides");
+  const guideTexts = useTranslatedTexts(
+    spotlightGuides.flatMap(({ topic, guide }) => [
+      topic.name,
+      ...guide.solutions.slice(0, 3),
+      guide.resource.title,
+      guide.resource.source,
+    ])
+  );
+  const safetyNote = useTranslatedText(
+    "If symptoms are severe, frequent, or affecting safety and daily life, move toward professional care nearby. This page should help users take the next step, not carry it alone."
+  );
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -81,10 +156,8 @@ export function SeekHelpPage() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-8"
       >
-        <h1 className="text-4xl mb-3">Seek Help</h1>
-        <p className="text-gray-600">
-          This page should help users act, not keep searching. Start with the kind of help you need, then take one next step.
-        </p>
+        <h1 className="text-4xl mb-3">{pageTitle}</h1>
+        <p className="text-gray-600">{pageDescription}</p>
       </motion.div>
 
       <motion.div
@@ -95,15 +168,15 @@ export function SeekHelpPage() {
       >
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.28em] text-emerald-500">Take Action</p>
-            <h2 className="mt-2 text-2xl font-medium">Pick the type of support you need</h2>
+            <p className="text-xs uppercase tracking-[0.28em] text-emerald-500">{takeAction}</p>
+            <h2 className="mt-2 text-2xl font-medium">{pickSupportType}</h2>
           </div>
           <Button variant="outline" className="rounded-full" onClick={() => navigate("/know-yourself")}>
-            Learn about feelings first
+            {learnAboutFeelingsFirst}
           </Button>
         </div>
         <div className="mt-5 grid gap-3 md:grid-cols-3">
-          {supportTracks.map((track) => {
+          {supportTracks.map((track, index) => {
             const Icon = track.icon;
             return (
               <button
@@ -115,12 +188,14 @@ export function SeekHelpPage() {
                     ? "border-emerald-400 bg-emerald-50 dark:border-emerald-500 dark:bg-emerald-950/30"
                     : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900/60"
                 }`}
-              >
+                >
                 <div className="flex items-center gap-2">
                   <Icon className="size-5 text-emerald-600 dark:text-emerald-300" />
-                  <p className="font-medium">{track.title}</p>
+                  <p className="font-medium">{supportTrackTexts[index * 2] || track.title}</p>
                 </div>
-                <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">{track.description}</p>
+                <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">
+                  {supportTrackTexts[index * 2 + 1] || track.description}
+                </p>
               </button>
             );
           })}
@@ -131,29 +206,29 @@ export function SeekHelpPage() {
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-3">
             <HeartPulse className="size-5 text-emerald-600" />
-            <h2 className="text-xl">{selectedTrack.title}</h2>
+            <h2 className="text-xl">{supportTrackTexts[supportTracks.findIndex((track) => track.id === selectedTrackId) * 2] || selectedTrack.title}</h2>
           </div>
           {selectedTrackId === "urgent" && (
             <div className="space-y-4">
               <p className="text-sm leading-6 text-gray-700 dark:text-slate-300">
-                If this feels urgent, do not keep browsing. Move toward safety, another person, or emergency resources now.
+                {urgentIntro}
               </p>
               <div className="grid gap-3">
                 <div className="rounded-2xl border border-red-200 bg-red-50 p-4 dark:border-red-500/20 dark:bg-red-950/20">
-                  <p className="font-medium text-red-700 dark:text-red-100">Immediate step 1</p>
-                  <p className="mt-1 text-sm text-red-700 dark:text-red-200">Open Emergency Resources and contact a hotline or local emergency service.</p>
+                  <p className="font-medium text-red-700 dark:text-red-100">{immediateStep1}</p>
+                  <p className="mt-1 text-sm text-red-700 dark:text-red-200">{immediateStep1Desc}</p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/60">
-                  <p className="font-medium">Immediate step 2</p>
-                  <p className="mt-1 text-sm text-gray-700 dark:text-slate-300">Tell one trusted person what is happening in plain words.</p>
+                  <p className="font-medium">{immediateStep2}</p>
+                  <p className="mt-1 text-sm text-gray-700 dark:text-slate-300">{immediateStep2Desc}</p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/60">
-                  <p className="font-medium">Immediate step 3</p>
-                  <p className="mt-1 text-sm text-gray-700 dark:text-slate-300">Go somewhere less isolated and put distance between yourself and anything unsafe.</p>
+                  <p className="font-medium">{immediateStep3}</p>
+                  <p className="mt-1 text-sm text-gray-700 dark:text-slate-300">{immediateStep3Desc}</p>
                 </div>
               </div>
               <Button className="w-full" onClick={() => navigate("/emergency")}>
-                Open emergency resources
+                {openEmergencyResources}
               </Button>
             </div>
           )}
@@ -161,24 +236,24 @@ export function SeekHelpPage() {
           {selectedTrackId === "self" && (
             <div className="space-y-4">
               <p className="text-sm leading-6 text-gray-700 dark:text-slate-300">
-                If users need support today, give them one action they can complete in the next few minutes.
+                {selfIntro}
               </p>
               <div className="grid gap-3">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/60">
-                  <p className="font-medium">Breathe with the body first</p>
-                  <p className="mt-1 text-sm text-gray-700 dark:text-slate-300">Use guided breathing, grounding, water, and sunlight before making bigger decisions.</p>
+                  <p className="font-medium">{breatheFirst}</p>
+                  <p className="mt-1 text-sm text-gray-700 dark:text-slate-300">{breatheFirstDesc}</p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/60">
-                  <p className="font-medium">Write down what is happening</p>
-                  <p className="mt-1 text-sm text-gray-700 dark:text-slate-300">Journal the pattern, what triggered it, and what helped even a little.</p>
+                  <p className="font-medium">{writeItDown}</p>
+                  <p className="mt-1 text-sm text-gray-700 dark:text-slate-300">{writeItDownDesc}</p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/60">
-                  <p className="font-medium">Tell one person early</p>
-                  <p className="mt-1 text-sm text-gray-700 dark:text-slate-300">Do not wait until everything gets worse before reaching out.</p>
+                  <p className="font-medium">{tellOnePerson}</p>
+                  <p className="mt-1 text-sm text-gray-700 dark:text-slate-300">{tellOnePersonDesc}</p>
                 </div>
               </div>
               <Button className="w-full" onClick={() => navigate("/shelter")}>
-                Open breathing and care tools
+                {openBreathingAndCareTools}
               </Button>
             </div>
           )}
@@ -186,20 +261,20 @@ export function SeekHelpPage() {
           {selectedTrackId === "professional" && (
             <div className="space-y-4">
               <p className="text-sm leading-6 text-gray-700 dark:text-slate-300">
-                If symptoms keep repeating, disrupt sleep, work, study, safety, or relationships, move toward qualified support.
+                {professionalIntro}
               </p>
               <div className="grid gap-3">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/60">
-                  <p className="font-medium">Look for a licensed clinician</p>
-                  <p className="mt-1 text-sm text-gray-700 dark:text-slate-300">Psychologist, psychiatrist, therapist, counselor, or physician depending on your needs.</p>
+                  <p className="font-medium">{licensedClinician}</p>
+                  <p className="mt-1 text-sm text-gray-700 dark:text-slate-300">{licensedClinicianDesc}</p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/60">
-                  <p className="font-medium">Bring notes</p>
-                  <p className="mt-1 text-sm text-gray-700 dark:text-slate-300">Track symptoms, sleep, triggers, and duration so users do not need to remember everything on the spot.</p>
+                  <p className="font-medium">{bringNotes}</p>
+                  <p className="mt-1 text-sm text-gray-700 dark:text-slate-300">{bringNotesDesc}</p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/60">
-                  <p className="font-medium">Use trusted free material between sessions</p>
-                  <p className="mt-1 text-sm text-gray-700 dark:text-slate-300">Self-help resources are useful, but they should support care, not replace it.</p>
+                  <p className="font-medium">{trustedMaterial}</p>
+                  <p className="mt-1 text-sm text-gray-700 dark:text-slate-300">{trustedMaterialDesc}</p>
                 </div>
               </div>
             </div>
@@ -208,18 +283,18 @@ export function SeekHelpPage() {
 
         <div className="grid gap-6">
           <Card className="p-6">
-            <h2 className="text-xl mb-4">Practical guides</h2>
+            <h2 className="text-xl mb-4">{practicalGuides}</h2>
             <div className="grid gap-4 md:grid-cols-2">
-              {spotlightGuides.map(({ topic, guide }) => (
+              {spotlightGuides.map(({ topic, guide }, index) => (
                 <div key={topic.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/60">
                   <div className="flex items-center gap-2 mb-2">
                     <HeartPulse className="size-4 text-emerald-600" />
-                    <h3 className="font-medium">{topic.name}</h3>
+                    <h3 className="font-medium">{guideTexts[index * 6] || topic.name}</h3>
                   </div>
                   <div className="space-y-2 mb-4">
-                    {guide.solutions.slice(0, 3).map((solution) => (
+                    {guide.solutions.slice(0, 3).map((solution, solutionIndex) => (
                       <p key={solution} className="text-sm text-gray-700 dark:text-slate-300">
-                        - {solution}
+                        - {guideTexts[index * 6 + solutionIndex + 1] || solution}
                       </p>
                     ))}
                   </div>
@@ -230,9 +305,9 @@ export function SeekHelpPage() {
                     className="inline-flex items-center gap-2 text-sm text-blue-700 hover:underline"
                   >
                     <BookOpen className="size-4" />
-                    {guide.resource.title}
+                    {guideTexts[index * 6 + 4] || guide.resource.title}
                   </a>
-                  <p className="text-xs text-gray-500 mt-1">{guide.resource.source}</p>
+                  <p className="text-xs text-gray-500 mt-1">{guideTexts[index * 6 + 5] || guide.resource.source}</p>
                 </div>
               ))}
             </div>
@@ -242,7 +317,7 @@ export function SeekHelpPage() {
             <div className="flex items-start gap-2">
               <ShieldCheck className="size-5 text-emerald-700 mt-0.5" />
               <p className="text-sm text-emerald-900 dark:text-emerald-100">
-                If symptoms are severe, frequent, or affecting safety and daily life, move toward professional care nearby. This page should help users take the next step, not carry it alone.
+                {safetyNote}
               </p>
             </div>
           </Card>

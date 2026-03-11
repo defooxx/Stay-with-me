@@ -4,11 +4,20 @@ import { motion } from "motion/react";
 import { Heart, Phone, Brain, HandHeart } from "lucide-react";
 import { useNavigate } from "react-router";
 import { getEmergencyContactsByCountry } from "../data/emergency-contacts";
+import { useTranslatedText } from "../hooks/useRuntimeTranslation";
 
 export function Footer() {
   const { t } = useLanguage();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const knowYourselfBetterTitle = useTranslatedText("Know Yourself Better");
+  const knowYourselfBetterDescription = useTranslatedText(
+    "Explore mental illnesses, symptoms, and educational videos."
+  );
+  const seekHelpTitle = useTranslatedText("Seek Help");
+  const seekHelpDescription = useTranslatedText(
+    "Condition-wise solutions and trusted free CBT/DBT-style resources."
+  );
   const countryCode = user?.countryCode || "US";
   const countryName = user?.countryName || "United States";
   const countryEmergencyResources = getEmergencyContactsByCountry(countryCode, countryName);
@@ -53,10 +62,10 @@ export function Footer() {
             >
               <div className="flex items-center gap-2 mb-2">
                 <Brain className="size-5 text-cyan-600" />
-                <h4 className="font-semibold text-cyan-700 dark:text-cyan-300">Know Yourself Better</h4>
+                <h4 className="font-semibold text-cyan-700 dark:text-cyan-300">{knowYourselfBetterTitle}</h4>
               </div>
               <p className="text-sm text-gray-700 dark:text-slate-200">
-                Explore mental illnesses, symptoms, and educational videos.
+                {knowYourselfBetterDescription}
               </p>
             </button>
 
@@ -66,10 +75,10 @@ export function Footer() {
             >
               <div className="flex items-center gap-2 mb-2">
                 <HandHeart className="size-5 text-emerald-600" />
-                <h4 className="font-semibold text-emerald-700 dark:text-emerald-300">Seek Help</h4>
+                <h4 className="font-semibold text-emerald-700 dark:text-emerald-300">{seekHelpTitle}</h4>
               </div>
               <p className="text-sm text-gray-700 dark:text-slate-200">
-                Condition-wise solutions and trusted free CBT/DBT-style resources.
+                {seekHelpDescription}
               </p>
             </button>
           </div>
