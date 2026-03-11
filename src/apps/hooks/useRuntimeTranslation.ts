@@ -197,7 +197,7 @@ export function useTranslatedTexts(texts: string[]) {
     return () => {
       cancelled = true;
     };
-  }, [language, textSignature, texts]);
+  }, [language, textSignature]);
 
   return translated;
 }
