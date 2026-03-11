@@ -29,7 +29,6 @@ import {
 type WaterState = {
   amountMl: number;
   goalIndex: number;
-  message: string;
 };
 
 type TaskState = {
@@ -94,23 +93,22 @@ const DEFAULT_GROUNDING_ANSWERS: GroundingAnswers = {
 
 function readWaterState(): WaterState {
   if (typeof window === "undefined") {
-    return { amountMl: 0, goalIndex: 0, message: "Your first shelter goal is 1 L of water today." };
+    return { amountMl: 0, goalIndex: 0 };
   }
 
   try {
     const saved = localStorage.getItem(WATER_STORAGE_KEY);
     if (!saved) {
-      return { amountMl: 0, goalIndex: 0, message: "Your first shelter goal is 1 L of water today." };
+      return { amountMl: 0, goalIndex: 0 };
     }
 
     const parsed = JSON.parse(saved) as Partial<WaterState>;
     return {
       amountMl: parsed.amountMl ?? 0,
       goalIndex: parsed.goalIndex ?? 0,
-      message: parsed.message ?? "Your first shelter goal is 1 L of water today.",
     };
   } catch {
-    return { amountMl: 0, goalIndex: 0, message: "Your first shelter goal is 1 L of water today." };
+    return { amountMl: 0, goalIndex: 0 };
   }
 }
 
@@ -262,7 +260,16 @@ export function EmotionalShelter() {
   const focusLabel = useTranslatedText("Focus");
   const goalLabel = useTranslatedText("Goal");
   const drinkWater = useTranslatedText("Drink water");
-  const waterMessage = useTranslatedText(waterState.message);
+  const waterMessageSource =
+    waterState.amountMl === 0 && waterState.goalIndex === 0
+      ? "Your first shelter goal is 1 L of water today."
+      : waterState.amountMl === WATER_GOALS[WATER_GOALS.length - 1] &&
+          waterState.goalIndex === WATER_GOALS.length - 1
+        ? "You reached 3.5 L. Your body got real care today."
+        : waterState.amountMl === 0 && waterState.goalIndex > 0
+          ? `You reached ${WATER_GOALS[waterState.goalIndex - 1] / 1000} L. Breathe in that win. Next goal: ${waterGoal / 1000} L.`
+          : `Water level rising. ${Math.max(waterGoal - waterState.amountMl, 0)} ml to go for today.`;
+  const waterMessage = useTranslatedText(waterMessageSource);
   const add250 = useTranslatedText("+250 ml");
   const add500 = useTranslatedText("+500 ml");
   const startAgain = useTranslatedText("Start again");
@@ -313,6 +320,9 @@ export function EmotionalShelter() {
     "This website can be a small home until your nervous system settles.",
   ]);
   const returnWhenReady = useTranslatedText("Return when you are ready");
+  const goToSlideLabels = useTranslatedTexts(
+    Array.from({ length: 5 }, (_, index) => `Go to slide ${index + 1}`)
+  );
 
   useEffect(() => {
     const previousBodyOverflow = document.body.style.overflow;
@@ -567,7 +577,6 @@ export function EmotionalShelter() {
           return {
             amountMl: 0,
             goalIndex: goalIndex + 1,
-            message: `You reached ${goal / 1000} L. Breathe in that win. Next goal: ${nextGoal / 1000} L.`,
           };
         }
 
@@ -575,14 +584,12 @@ export function EmotionalShelter() {
         return {
           amountMl: WATER_GOALS[WATER_GOALS.length - 1],
           goalIndex,
-          message: "You reached 3.5 L. Your body got real care today.",
         };
       }
 
       return {
-        ...current,
         amountMl: nextAmount,
-        message: `Water level rising. ${Math.max(goal - nextAmount, 0)} ml to go for today.`,
+        goalIndex: current.goalIndex,
       };
     });
   };
@@ -591,7 +598,6 @@ export function EmotionalShelter() {
     setWaterState({
       amountMl: 0,
       goalIndex: 0,
-      message: "That is okay. We start again gently with 1 L.",
     });
     logActivity("Water", "Restarted water habit", "Started water tracking again from 1 L.");
   };
@@ -673,7 +679,7 @@ export function EmotionalShelter() {
               type="button"
               onClick={() => setSlideIndex(index)}
               className={`h-2.5 rounded-full transition-all ${slideIndex === index ? "w-10 bg-rose-300" : "w-2.5 bg-white/25"}`}
-              aria-label={`Go to slide ${index + 1}`}
+              aria-label={goToSlideLabels[index] || `Go to slide ${index + 1}`}
             />
           ))}
         </div>

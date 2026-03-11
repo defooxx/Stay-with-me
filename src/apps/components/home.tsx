@@ -45,6 +45,16 @@ export function Home() {
   const emergencyDescription = useTranslatedText(
     "Immediate resources, guided breathing, and extra support tools."
   );
+  const startHereLabel = useTranslatedText("Start Here");
+  const fourCalmStartingPoints = useTranslatedText("Four calm starting points");
+  const startHereDescription = useTranslatedText(
+    "Home should help users choose quickly. These are the core places most people need first."
+  );
+  const needUrgentHelp = useTranslatedText("Need urgent help?");
+  const moreSupportLabel = useTranslatedText("More Support");
+  const secondaryToolsLabel = useTranslatedText(
+    "Secondary tools when users want more"
+  );
   const headingSizeClass =
     welcomeQuote.length > 58
       ? "text-2xl sm:text-3xl md:text-4xl lg:text-5xl"
@@ -234,10 +244,10 @@ export function Home() {
       >
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.28em] text-pink-500">Start Here</p>
-            <h3 className="mt-2 text-2xl font-medium text-gray-900 dark:text-white">Four calm starting points</h3>
+            <p className="text-xs uppercase tracking-[0.28em] text-pink-500">{startHereLabel}</p>
+            <h3 className="mt-2 text-2xl font-medium text-gray-900 dark:text-white">{fourCalmStartingPoints}</h3>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-300">
-              Home should help users choose quickly. These are the core places most people need first.
+              {startHereDescription}
             </p>
           </div>
           <Button
@@ -245,7 +255,7 @@ export function Home() {
             onClick={() => navigate("/emergency")}
             className="rounded-full"
           >
-            Need urgent help?
+            {needUrgentHelp}
           </Button>
         </div>
       </motion.div>
@@ -296,8 +306,8 @@ export function Home() {
         transition={{ delay: 1.15, duration: 0.5 }}
         className="mb-8 flex flex-col gap-2"
       >
-        <p className="text-xs uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">More Support</p>
-        <h3 className="text-2xl font-medium text-gray-900 dark:text-white">Secondary tools when users want more</h3>
+        <p className="text-xs uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">{moreSupportLabel}</p>
+        <h3 className="text-2xl font-medium text-gray-900 dark:text-white">{secondaryToolsLabel}</h3>
       </motion.div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 mb-16">
