@@ -14,6 +14,7 @@ import {
   Waves,
 } from "lucide-react";
 import { Card } from "./UI/card";
+import { Button } from "./UI/button";
 
 const QUOTE_TRANSLATION_CACHE_KEY = "home_quote_translation_cache";
 const APP_LANG_TO_TRANSLATE_LANG: Record<string, string> = {
@@ -113,17 +114,34 @@ export function Home() {
     {
       icon: MessageSquare,
       title: t("confess"),
-      description: t("confessSubtitle"),
+      description: "Say what is heavy in private, or share only if you want to.",
       path: "/confess",
       color: "from-purple-500 to-pink-500",
     },
     {
+      icon: Waves,
+      title: "Self-care",
+      description: "Breathing technique and gentle care tools to help you reset.",
+      path: "/shelter",
+      color: "from-cyan-500 to-blue-500",
+    },
+    {
       icon: BookOpen,
       title: t("journal"),
-      description: t("homeJournalDesc"),
+      description: "Write first. Reflect later. Your journal stays private to you.",
       path: "/journal",
       color: "from-blue-500 to-cyan-500",
     },
+    {
+      icon: Mail,
+      title: t("readLetters"),
+      description: t("homeReadLettersDesc"),
+      path: "/read-letters",
+      color: "from-indigo-500 to-purple-500",
+    },
+  ];
+
+  const moreSupport = [
     {
       icon: Smile,
       title: t("moodTracker"),
@@ -134,7 +152,7 @@ export function Home() {
     {
       icon: HeartPulse,
       title: t("emergency"),
-      description: t("homeEmergencyDesc"),
+      description: "Immediate resources, guided breathing, and extra support tools.",
       path: "/emergency",
       color: "from-red-500 to-orange-500",
     },
@@ -151,20 +169,6 @@ export function Home() {
       description: t("writeLetterSubtitle"),
       path: "/write-letter",
       color: "from-yellow-500 to-amber-500",
-    },
-    {
-      icon: Mail,
-      title: t("readLetters"),
-      description: t("homeReadLettersDesc"),
-      path: "/read-letters",
-      color: "from-indigo-500 to-purple-500",
-    },
-    {
-      icon: Waves,
-      title: "Self-care",
-      description: "Breathing technique and gentle care tools to help you reset.",
-      path: "/shelter",
-      color: "from-cyan-500 to-blue-500",
     },
   ];
 
@@ -282,8 +286,31 @@ export function Home() {
         </div>
       </motion.div>
 
-      {/* Features Grid with enhanced cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1, duration: 0.5 }}
+        className="mb-8 rounded-[2rem] border border-white/60 bg-white/75 p-6 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-slate-900/55"
+      >
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.28em] text-pink-500">Start Here</p>
+            <h3 className="mt-2 text-2xl font-medium text-gray-900 dark:text-white">Four calm starting points</h3>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-slate-300">
+              Home should help users choose quickly. These are the core places most people need first.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => navigate("/emergency")}
+            className="rounded-full"
+          >
+            Need urgent help?
+          </Button>
+        </div>
+      </motion.div>
+
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-2 mb-16">
         {features.map((feature, index) => {
           const Icon = feature.icon;
           return (
@@ -317,6 +344,45 @@ export function Home() {
                     {feature.description}
                   </p>
                 </div>
+              </Card>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.15, duration: 0.5 }}
+        className="mb-8 flex flex-col gap-2"
+      >
+        <p className="text-xs uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">More Support</p>
+        <h3 className="text-2xl font-medium text-gray-900 dark:text-white">Secondary tools when users want more</h3>
+      </motion.div>
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 mb-16">
+        {moreSupport.map((feature, index) => {
+          const Icon = feature.icon;
+          return (
+            <motion.div
+              key={feature.path}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.2 + index * 0.08, duration: 0.45 }}
+              whileHover={{ y: -6, scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Card
+                className="h-full cursor-pointer border border-slate-200/70 bg-white/70 p-6 transition-all duration-300 hover:shadow-xl dark:border-slate-700 dark:bg-slate-900/50"
+                onClick={() => navigate(feature.path)}
+              >
+                <div className={`mb-4 flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br ${feature.color} shadow-lg`}>
+                  <Icon className="size-6 text-white" />
+                </div>
+                <h4 className="text-lg font-medium text-gray-800 dark:text-white">{feature.title}</h4>
+                <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-white/80">
+                  {feature.description}
+                </p>
               </Card>
             </motion.div>
           );

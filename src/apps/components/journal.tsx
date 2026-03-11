@@ -448,6 +448,12 @@ export function Journal() {
             {t("lock")}
           </Button>
         </div>
+        <Card className="border-slate-200/80 bg-white/70 p-5 dark:border-slate-700 dark:bg-slate-900/50">
+          <p className="text-xs uppercase tracking-[0.25em] text-blue-500">Simple Flow</p>
+          <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
+            Write first. Read later. This page is intentionally quieter than the rest of the app.
+          </p>
+        </Card>
       </motion.div>
 
       {/* New Entry */}
@@ -471,6 +477,13 @@ export function Journal() {
       </motion.div>
 
       {/* Entries List */}
+      <Card className="p-6">
+        <div className="mb-4">
+          <h3 className="text-xl font-medium">Recent entries</h3>
+          <p className="text-sm text-gray-600 dark:text-slate-300">
+            Your previous writing stays together here instead of competing with the editor above.
+          </p>
+        </div>
       <div className="space-y-4">
         <AnimatePresence>
           {entries.length === 0 ? (
@@ -511,6 +524,7 @@ export function Journal() {
           )}
         </AnimatePresence>
       </div>
+      </Card>
     </div>
   );
 }

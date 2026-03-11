@@ -6,6 +6,9 @@ interface UserSettings {
   notificationsEnabled: boolean;
   emailNotifications: boolean;
   profileVisible: boolean;
+  notifyOnLikes: boolean;
+  notifyOnComments: boolean;
+  notifyOnLetters: boolean;
   theme: ThemeMode;
 }
 
@@ -66,6 +69,9 @@ const defaultUserSettings: UserSettings = {
   notificationsEnabled: true,
   emailNotifications: false,
   profileVisible: true,
+  notifyOnLikes: true,
+  notifyOnComments: true,
+  notifyOnLetters: true,
   theme: "light",
 };
 

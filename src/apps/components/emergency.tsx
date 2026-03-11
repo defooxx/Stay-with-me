@@ -1,20 +1,72 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { motion } from "motion/react";
+import {
+  AlertTriangle,
+  Droplets,
+  ListTodo,
+  Pause,
+  Phone,
+  Play,
+  Sparkles,
+  Sunrise,
+  Waves,
+} from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 import { useAuth } from "../context/AuthContext";
-import { motion, AnimatePresence } from "motion/react";
-import { Heart, Wind, Brain, Play, Pause } from "lucide-react";
+import { getEmergencyContactsByCountry } from "../data/emergency-contacts";
 import { Card } from "./UI/card";
 import { Button } from "./UI/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./UI/tabs";
-import { getEmergencyContactsByCountry } from "../data/emergency-contacts";
+
+const BREATHING_PHASES = [
+  { key: "inhale", label: "Inhale", seconds: 4, scale: 1.08 },
+  { key: "hold", label: "Hold", seconds: 4, scale: 1.16 },
+  { key: "exhale", label: "Exhale", seconds: 4, scale: 0.92 },
+] as const;
+
+const groundingExercises = [
+  {
+    title: "5-4-3-2-1 grounding",
+    description: "Name 5 things you see, 4 you can touch, 3 you hear, 2 you smell, and 1 you taste.",
+  },
+  {
+    title: "Jaw and shoulders reset",
+    description: "Relax your tongue, unclench your jaw, and let your shoulders drop on the exhale.",
+  },
+  {
+    title: "Safe place image",
+    description: "Picture one place that feels steady, quiet, and safe enough for the next minute.",
+  },
+];
+
+const careTools = [
+  {
+    icon: Droplets,
+    title: "Drink water",
+    description: "Start with one glass. Small body care can interrupt overwhelm.",
+  },
+  {
+    icon: Sunrise,
+    title: "Sit near sunlight",
+    description: "A little daylight can help the body feel less trapped.",
+  },
+  {
+    icon: ListTodo,
+    title: "Do one task only",
+    description: "Choose one thing before the next five things.",
+  },
+];
 
 export function EmergencyResources() {
   const { t } = useLanguage();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [breathingActive, setBreathingActive] = useState(false);
-  const [breathingPhase, setBreathingPhase] = useState<"inhale" | "hold" | "exhale">("inhale");
+  const [breathingIndex, setBreathingIndex] = useState(0);
+  const [selectedExerciseIndex, setSelectedExerciseIndex] = useState(0);
+  const breathingPhase = BREATHING_PHASES[breathingIndex];
+  const selectedExercise = groundingExercises[selectedExerciseIndex];
+
   const countryCode = user?.countryCode || "US";
   const countryName = user?.countryName || "United States";
   const countryEmergencyResources = getEmergencyContactsByCountry(countryCode, countryName);
@@ -25,264 +77,187 @@ export function EmergencyResources() {
     }
 
     const timeoutId = window.setTimeout(() => {
-      setBreathingPhase((current) =>
-        current === "inhale" ? "hold" : current === "hold" ? "exhale" : "inhale"
-      );
-    }, 4000);
+      setBreathingIndex((current) => (current + 1) % BREATHING_PHASES.length);
+    }, breathingPhase.seconds * 1000);
 
     return () => window.clearTimeout(timeoutId);
-  }, [breathingActive, breathingPhase]);
-
-  const calmingExercises = [
-    {
-      title: "5-4-3-2-1 Grounding Technique",
-      description: "A powerful technique to bring you back to the present moment.",
-      steps: [
-        "Name 5 things you can see around you",
-        "Name 4 things you can touch",
-        "Name 3 things you can hear",
-        "Name 2 things you can smell",
-        "Name 1 thing you can taste",
-      ],
-    },
-    {
-      title: "Progressive Muscle Relaxation",
-      description: "Release tension from your body systematically.",
-      steps: [
-        "Sit or lie down in a comfortable position",
-        "Tense your feet muscles for 5 seconds, then release",
-        "Move up to your calves, thighs, abdomen",
-        "Continue to shoulders, arms, and hands",
-        "Finish with your face and jaw",
-        "Take deep breaths throughout",
-      ],
-    },
-    {
-      title: "Safe Place Visualization",
-      description: "Create a mental sanctuary.",
-      steps: [
-        "Close your eyes and take a deep breath",
-        "Imagine a place where you feel completely safe",
-        "Notice the details - colors, sounds, smells",
-        "Feel the peace this place brings you",
-        "Stay here as long as you need",
-      ],
-    },
-  ];
-
-  const meditationVideos = [
-    {
-      title: "5-Minute Guided Meditation",
-      videoId: "inpok4MKVLM",
-    },
-    {
-      title: "Calm Your Mind",
-      videoId: "ZToicYcHIOU",
-    },
-  ];
+  }, [breathingActive, breathingIndex, breathingPhase.seconds]);
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="mx-auto max-w-5xl">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-8"
+        className="mb-8 text-center"
       >
         <h1 className="text-4xl mb-3">{t("emergencyTitle")}</h1>
-        <p className="text-gray-600">{t("emergencySubtitle")}</p>
+        <p className="mx-auto max-w-3xl text-gray-600 dark:text-slate-300">
+          This page should reduce decisions. If it is urgent, reach out now. If it is not immediate danger, use one breathing or care step next.
+        </p>
       </motion.div>
 
-      {/* Crisis Hotlines */}
-      <Card className="p-6 mb-8 bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800">
-        <div className="flex items-start gap-4">
-          <Heart className="size-8 text-red-500 mt-1" />
+      <Card className="mb-6 border-red-300 bg-red-50/90 p-5 dark:border-red-700 dark:bg-red-950/35">
+        <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
           <div>
-            <h3 className="text-xl mb-2 text-red-700 dark:text-red-100">{t("ifInCrisis")} - {countryName}</h3>
-            <p className="text-red-600 dark:text-red-200 mb-3">
-              {t("pleaseReachImmediateHelp")}
-            </p>
-            <div className="space-y-2 text-sm text-red-700 dark:text-red-100">
+            <div className="flex items-center gap-2 text-red-700 dark:text-red-100">
+              <AlertTriangle className="size-5" />
+              <p className="text-sm font-medium uppercase tracking-[0.24em]">Urgent help first</p>
+            </div>
+            <h2 className="mt-3 text-2xl font-semibold text-red-900 dark:text-red-100">{t("ifInCrisis")} - {countryName}</h2>
+            <p className="mt-2 text-sm leading-6 text-red-800 dark:text-red-200">{t("pleaseReachImmediateHelp")}</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {countryEmergencyResources.map((item) => (
-                <p key={item.label}>
-                  <strong>{item.label}:</strong>{" "}
-                  {item.text}{" "}
+                <div key={item.label} className="rounded-2xl border border-red-200 bg-white/70 p-4 dark:border-red-800 dark:bg-red-950/20">
+                  <p className="text-sm font-medium text-red-900 dark:text-red-100">{item.label}</p>
+                  <p className="mt-1 text-sm text-red-700 dark:text-red-200">{item.text}</p>
                   <a
                     href={item.link}
                     target={item.link.startsWith("http") ? "_blank" : undefined}
                     rel={item.link.startsWith("http") ? "noopener noreferrer" : undefined}
-                    className="text-red-600 hover:text-red-500 hover:underline font-semibold dark:text-red-200 dark:hover:text-red-100"
+                    className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-red-700 hover:underline dark:text-red-100"
                   >
+                    <Phone className="size-4" />
                     {item.linkLabel}
                   </a>
-                </p>
+                </div>
               ))}
             </div>
-            <div className="mt-5">
-              <Button
-                variant="outline"
-                className="border-red-300 text-red-700 hover:bg-red-100 dark:border-red-400/40 dark:text-red-100 dark:hover:bg-red-900/40"
-                onClick={() => navigate("/shelter")}
-              >
-                Skip Now
-              </Button>
+          </div>
+
+          <div className="rounded-[1.75rem] border border-red-200 bg-white/75 p-5 dark:border-red-800 dark:bg-red-950/20">
+            <p className="text-sm font-medium text-red-900 dark:text-red-100">If calling feels hard</p>
+            <div className="mt-3 space-y-3 text-sm leading-6 text-red-800 dark:text-red-200">
+              <p>Message one trusted person in simple words: “I am not feeling safe and I need you with me.”</p>
+              <p>Move closer to another person or a safer room.</p>
+              <p>Then use `Skip Now` if you need a softer regulation screen immediately.</p>
             </div>
+            <Button
+              variant="outline"
+              className="mt-4 w-full border-red-300 text-red-700 hover:bg-red-100 dark:border-red-500/30 dark:text-red-100 dark:hover:bg-red-900/40"
+              onClick={() => navigate("/shelter")}
+            >
+              Skip Now
+            </Button>
           </div>
         </div>
       </Card>
 
-      <Tabs defaultValue="breathing" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="breathing">
-            <Wind className="size-4 mr-2" />
-            {t("breathingExercise")}
-          </TabsTrigger>
-          <TabsTrigger value="calming">
-            <Heart className="size-4 mr-2" />
-            {t("calmingExercises")}
-          </TabsTrigger>
-          <TabsTrigger value="meditation">
-            <Brain className="size-4 mr-2" />
-            {t("guidedMeditation")}
-          </TabsTrigger>
-        </TabsList>
+      <div className="grid gap-6">
+        <Card className="p-6 bg-white/75 backdrop-blur-md dark:bg-slate-900/55">
+          <div className="flex items-center gap-2 text-sky-600 dark:text-sky-300">
+            <Waves className="size-5" />
+            <p className="text-sm font-medium uppercase tracking-[0.24em]">{t("breathingExercise")}</p>
+          </div>
+          <h3 className="mt-3 text-2xl font-semibold">One breath at a time</h3>
+          <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">
+            Inhale for 4, hold for 4, exhale for 4. Keep this screen simple enough that a user can follow it while distressed.
+          </p>
 
-        {/* Breathing Exercise */}
-        <TabsContent value="breathing">
-          <Card className="p-8">
-            <div className="text-center">
-              <h3 className="text-2xl mb-4">{t("boxBreathingTitle")}</h3>
-              <p className="text-gray-600 mb-8">
-                {t("boxBreathingDesc")}
-              </p>
-
-              <div className="mb-8">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={breathingPhase}
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.8, opacity: 0 }}
-                    className="relative w-64 h-64 mx-auto"
-                  >
-                    <motion.div
-                      animate={{
-                        scale: breathingActive
-                          ? breathingPhase === "inhale"
-                            ? 1.5
-                            : breathingPhase === "exhale"
-                            ? 0.7
-                            : 1.2
-                          : 1,
-                      }}
-                      transition={{ duration: 4, ease: "easeInOut" }}
-                      className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center"
-                    >
-                      <div className="text-white text-center">
-                        <p className="text-3xl font-light mb-2">
-                          {breathingPhase === "inhale" && t("breatheIn")}
-                          {breathingPhase === "hold" && t("hold")}
-                          {breathingPhase === "exhale" && t("breatheOut")}
-                        </p>
-                        <p className="text-lg opacity-80">{t("fourSeconds")}</p>
-                      </div>
-                    </motion.div>
-                  </motion.div>
-                </AnimatePresence>
+          <div className="mt-6 flex flex-col items-center text-center">
+            <motion.div
+              animate={{ scale: breathingActive ? breathingPhase.scale : 1 }}
+              transition={{ duration: breathingPhase.seconds, ease: "easeInOut" }}
+              className="flex size-64 items-center justify-center rounded-full bg-gradient-to-br from-sky-300 via-cyan-200 to-indigo-300 shadow-[0_20px_60px_rgba(59,130,246,0.25)]"
+            >
+              <div className="text-slate-900">
+                <p className="text-lg font-medium uppercase tracking-[0.3em]">{breathingPhase.label}</p>
+                <p className="mt-2 text-5xl font-semibold">{breathingPhase.seconds}</p>
+                <p className="mt-2 text-base">seconds</p>
               </div>
+            </motion.div>
 
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left dark:border-slate-700 dark:bg-slate-900/70">
+              <p className="font-medium dark:text-white">
+                {breathingPhase.key === "inhale" && "Take air in slowly."}
+                {breathingPhase.key === "hold" && "Stay still. Nothing to force."}
+                {breathingPhase.key === "exhale" && "Let your shoulders loosen as you breathe out."}
+              </p>
+              <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
+                This is not about doing it perfectly. It is only about lowering the intensity enough for the next safe step.
+              </p>
+            </div>
+
+            <div className="mt-5 flex flex-wrap justify-center gap-3">
               <Button
-                size="lg"
+                className="rounded-full"
                 onClick={() => {
                   setBreathingActive((current) => !current);
                   if (!breathingActive) {
-                    setBreathingPhase("inhale");
+                    setBreathingIndex(0);
                   }
                 }}
-                className="w-48"
               >
-                {breathingActive ? (
-                  <>
-                    <Pause className="size-5 mr-2" />
-                    {t("stop")}
-                  </>
-                ) : (
-                  <>
-                    <Play className="size-5 mr-2" />
-                    {t("start")}
-                  </>
-                )}
+                {breathingActive ? <Pause className="size-4 mr-2" /> : <Play className="size-4 mr-2" />}
+                {breathingActive ? "Pause" : "Start breathing"}
               </Button>
+              <Button variant="outline" className="rounded-full" onClick={() => navigate("/shelter")}>
+                Open full care screen
+              </Button>
+            </div>
+          </div>
+        </Card>
 
-              <div className="mt-8 text-left max-w-md mx-auto">
-                <h4 className="font-medium mb-2">{t("howItWorks")}</h4>
-                <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600">
-                  <li>{t("breatheIn4")}</li>
-                  <li>{t("hold4")}</li>
-                  <li>{t("breatheOut4")}</li>
-                  <li>{t("rest4")}</li>
-                  <li>{t("repeatAsNeeded")}</li>
-                </ol>
-              </div>
+        <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+          <Card className="p-6 bg-white/75 backdrop-blur-md dark:bg-slate-900/55">
+            <div className="flex items-center gap-2 text-pink-600 dark:text-pink-300">
+              <Sparkles className="size-5" />
+              <p className="text-sm font-medium uppercase tracking-[0.24em]">More support</p>
+            </div>
+            <h3 className="mt-3 text-2xl font-semibold">Choose one grounding action</h3>
+            <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">
+              Only one needs to be visible at a time. Pick the one that feels most possible.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {groundingExercises.map((exercise, index) => (
+                <button
+                  key={exercise.title}
+                  type="button"
+                  onClick={() => setSelectedExerciseIndex(index)}
+                  className={`rounded-full border px-4 py-2 text-sm transition ${
+                    selectedExerciseIndex === index
+                      ? "border-pink-400 bg-pink-50 text-pink-700 dark:border-pink-500 dark:bg-pink-950/30 dark:text-pink-100"
+                      : "border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200"
+                  }`}
+                >
+                  {exercise.title}
+                </button>
+              ))}
+            </div>
+            <div className="mt-5 rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-900/60">
+              <p className="text-sm font-medium">Current support focus</p>
+              <p className="mt-3 text-base leading-7 text-gray-700 dark:text-slate-200">{selectedExercise.description}</p>
             </div>
           </Card>
-        </TabsContent>
 
-        {/* Calming Exercises */}
-        <TabsContent value="calming">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {calmingExercises.map((exercise, index) => (
-              <motion.div
-                key={exercise.title}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Card className="p-6 h-full">
-                  <h3 className="text-lg mb-2">{exercise.title}</h3>
-                  <p className="text-sm text-gray-600 mb-4">{exercise.description}</p>
-                  <ol className="list-decimal list-inside space-y-2 text-sm">
-                    {exercise.steps.map((step, i) => (
-                      <li key={i} className="text-gray-700">
-                        {step}
-                      </li>
-                    ))}
-                  </ol>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </TabsContent>
-
-        {/* Guided Meditation */}
-        <TabsContent value="meditation">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {meditationVideos.map((video, index) => (
-              <motion.div
-                key={video.videoId}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Card className="p-6">
-                  <h3 className="text-lg mb-4">{video.title}</h3>
-                  <div className="aspect-video">
-                    <iframe
-                      width="100%"
-                      height="100%"
-                      src={`https://www.youtube.com/embed/${video.videoId}`}
-                      title={video.title}
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      className="rounded-lg"
-                    ></iframe>
+          <Card className="p-6 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
+            <h3 className="text-2xl font-semibold">Care tools</h3>
+            <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">
+              If it is not an immediate crisis, move toward one body-based action instead of trying to solve everything at once.
+            </p>
+            <div className="mt-4 space-y-3">
+              {careTools.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div key={item.title} className="rounded-2xl border border-slate-200 bg-white/70 p-4 dark:border-slate-700 dark:bg-slate-900/60">
+                    <div className="flex items-start gap-3">
+                      <div className="rounded-xl bg-slate-900 px-3 py-3 dark:bg-white/10">
+                        <Icon className="size-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{item.title}</p>
+                        <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">{item.description}</p>
+                      </div>
+                    </div>
                   </div>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </TabsContent>
-      </Tabs>
+                );
+              })}
+            </div>
+            <Button className="mt-5 w-full" onClick={() => navigate("/shelter")}>
+              Open breathing and care tools
+            </Button>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
