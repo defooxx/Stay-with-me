@@ -4,12 +4,17 @@ import { motion } from "motion/react";
 import { Heart, Phone, Brain, HandHeart } from "lucide-react";
 import { useNavigate } from "react-router";
 import { getEmergencyContactsByCountry } from "../data/emergency-contacts";
-import { useTranslatedText } from "../hooks/useRuntimeTranslation";
+import { useTranslatedText, useTranslatedTexts } from "../hooks/useRuntimeTranslation";
 
 export function Footer() {
   const { t } = useLanguage();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const footerMessage = useTranslatedText(t("footerMessage"));
+  const footerStrengthLine = useTranslatedText(t("footerStrengthLine"));
+  const ifInCrisisReachOut = useTranslatedText(t("ifInCrisisReachOut"));
+  const safeSpaceMentalHealth = useTranslatedText(t("safeSpaceMentalHealth"));
+  const footerQuote = useTranslatedText(t("footerQuote"));
   const knowYourselfBetterTitle = useTranslatedText("Know Yourself Better");
   const knowYourselfBetterDescription = useTranslatedText(
     "Explore mental illnesses, symptoms, and educational videos."
@@ -21,6 +26,14 @@ export function Footer() {
   const countryCode = user?.countryCode || "US";
   const countryName = user?.countryName || "United States";
   const countryEmergencyResources = getEmergencyContactsByCountry(countryCode, countryName);
+  const translatedCountryName = useTranslatedText(countryName);
+  const emergencyResourceTextValues = useTranslatedTexts(
+    countryEmergencyResources.flatMap((item) => [
+      item.label,
+      item.text,
+      item.linkLabel.includes(".") ? "" : item.linkLabel,
+    ])
+  );
 
   return (
     <motion.footer
@@ -47,10 +60,10 @@ export function Footer() {
               <Heart className="size-12 text-pink-500 fill-pink-500 mx-auto" />
             </motion.div>
             <h3 className="text-2xl md:text-3xl mb-4 font-light text-gray-800 dark:text-slate-100">
-              {t("footerMessage")}
+              {footerMessage}
             </h3>
             <p className="text-lg text-gray-700 dark:text-slate-200 mb-2">
-              {t("footerStrengthLine")}
+              {footerStrengthLine}
             </p>
           </div>
 
@@ -87,20 +100,22 @@ export function Footer() {
           <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg p-6 mb-8">
             <h4 className="font-semibold text-red-900 dark:text-red-200 mb-3 flex items-center gap-2">
               <Phone className="size-5" />
-              {t("ifInCrisisReachOut")} - {countryName}
+              {ifInCrisisReachOut} - {translatedCountryName}
             </h4>
             <div className="space-y-2 text-sm text-red-800 dark:text-red-200">
-              {countryEmergencyResources.map((item) => (
+              {countryEmergencyResources.map((item, index) => (
                 <p key={item.label}>
-                  <strong>{item.label}:</strong>{" "}
-                  {item.text}{" "}
+                  <strong>{emergencyResourceTextValues[index * 3] || item.label}:</strong>{" "}
+                  {emergencyResourceTextValues[index * 3 + 1] || item.text}{" "}
                   <a
                     href={item.link}
                     target={item.link.startsWith("http") ? "_blank" : undefined}
                     rel={item.link.startsWith("http") ? "noopener noreferrer" : undefined}
                     className="font-semibold hover:underline"
                   >
-                    {item.linkLabel}
+                    {item.linkLabel.includes(".")
+                      ? item.linkLabel
+                      : emergencyResourceTextValues[index * 3 + 2] || item.linkLabel}
                   </a>
                 </p>
               ))}
@@ -110,10 +125,10 @@ export function Footer() {
           {/* Footer Bottom */}
           <div className="text-center text-sm text-gray-600 dark:text-slate-300 border-t border-purple-200 dark:border-slate-700 pt-6">
             <p className="mb-2">
-              © 2026 {t("appName")} - {t("safeSpaceMentalHealth")}
+              © 2026 {t("appName")} - {safeSpaceMentalHealth}
             </p>
             <p className="italic">
-              {t("footerQuote")}
+              {footerQuote}
             </p>
           </div>
         </div>
