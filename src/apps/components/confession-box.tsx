@@ -26,6 +26,7 @@ import {
 } from "./UI/select";
 import { toast } from "sonner";
 import { recoveryQuestions } from "../data/mental-health";
+import { pushCommentNotification, pushLikeNotification } from "../lib/notifications";
 
 type PostComment = {
   id: number;
@@ -424,6 +425,7 @@ export function ConfessionBox() {
 
   const handleToggleLike = (postId: number) => {
     const actorId = user?.email || "guest";
+    const actorName = user?.nickname || t("anonymous");
     const updatedPosts = posts.map((post) => {
       if (post.id !== postId) {
         return post;
@@ -446,6 +448,16 @@ export function ConfessionBox() {
     });
 
     persistPosts(updatedPosts);
+
+    const likedPost = updatedPosts.find((post) => post.id === postId);
+    if (likedPost && likedPost.likedBy.includes(actorId)) {
+      pushLikeNotification({
+        recipientId: likedPost.userId,
+        actorId,
+        actorName,
+        postId,
+      });
+    }
   };
 
   const handleAddComment = (postId: number) => {
@@ -474,6 +486,17 @@ export function ConfessionBox() {
 
     persistPosts(updatedPosts);
     setCommentDrafts((prev) => ({ ...prev, [postId]: "" }));
+
+    const commentedPost = updatedPosts.find((post) => post.id === postId);
+    if (commentedPost) {
+      pushCommentNotification({
+        recipientId: commentedPost.userId,
+        actorId: user?.email,
+        actorName: user?.nickname || t("anonymous"),
+        postId,
+        commentText,
+      });
+    }
   };
 
   const handleShare = async (postId: number, text: string) => {
@@ -497,6 +520,9 @@ export function ConfessionBox() {
       setShowVideo(false);
     }
   };
+
+  const isWritingFlow = step === "mode" || step === "confess";
+  const isCommunityView = step === "feed";
 
   if (showCrisisResources) {
     return (
@@ -543,6 +569,41 @@ export function ConfessionBox() {
         <h1 className="text-4xl mb-3">{t("confessTitle")}</h1>
         <p className="text-gray-600 dark:text-slate-300">{t("confessSubtitle")}</p>
       </motion.div>
+
+      {step !== "pin" && step !== "response" && (
+        <Card className="mb-6 border-slate-200/80 bg-white/70 p-5 dark:border-slate-700 dark:bg-slate-900/50">
+          <div className="flex flex-col gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-[0.25em] text-purple-500">Use This Space Gently</p>
+              <h2 className="mt-2 text-xl font-medium">
+                {isCommunityView ? "Community is optional. Writing comes first." : "Private first. Community only if you want it."}
+              </h2>
+              <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
+                {isCommunityView
+                  ? "This is a separate public-facing space. You can return to private writing any time."
+                  : "Keep the main path focused on getting thoughts out. The community feed stays separate so it does not interrupt the writing flow."}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={isWritingFlow ? "default" : "outline"}
+                className="rounded-full"
+                onClick={() => setStep("mode")}
+              >
+                Private writing
+              </Button>
+              <Button
+                variant={isCommunityView ? "default" : "outline"}
+                className="rounded-full"
+                onClick={() => setStep("feed")}
+              >
+                Community feed
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
 
       <AnimatePresence mode="wait">
         {step === "pin" && (
@@ -730,7 +791,13 @@ export function ConfessionBox() {
             exit={{ opacity: 0, x: 20 }}
           >
             <Card className="p-8">
-              <h3 className="text-2xl mb-6 text-center">{t("chooseYourMode")}</h3>
+              <h3 className="text-2xl mb-3 text-center">{t("chooseYourMode")}</h3>
+              <p className="mb-6 text-center text-sm text-gray-600 dark:text-slate-300">
+                Start privately. Choose the kind of response you want after writing.
+              </p>
+              <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-gray-600 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300">
+                Both options keep your confession private. Community sharing is still a separate choice later.
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <motion.div
                   whileHover={{ scale: 1.05 }}
@@ -784,37 +851,58 @@ export function ConfessionBox() {
             exit={{ opacity: 0, x: 20 }}
           >
             <Card className="p-8">
-              <Textarea
-                placeholder={t("enterConfession")}
-                value={confession}
-                onChange={(e) => setConfession(e.target.value)}
-                className="min-h-64 mb-4"
-              />
+              <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
+                <div>
+                  <div className="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/60">
+                    <p className="text-sm text-gray-600 dark:text-slate-300">
+                      Start by writing freely. Saving stays private. Community posting stays optional.
+                    </p>
+                  </div>
+                  <Textarea
+                    placeholder={t("enterConfession")}
+                    value={confession}
+                    onChange={(e) => setConfession(e.target.value)}
+                    className="min-h-72 mb-4"
+                  />
+                </div>
 
-              <div className="mb-4">
-                <label className="block text-sm mb-2">{t("deleteOption")}</label>
-                <Select value={deleteOption} onValueChange={setDeleteOption}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="now">{t("deleteNow")}</SelectItem>
-                    <SelectItem value="1hour">{t("deleteAfter1Hour")}</SelectItem>
-                    <SelectItem value="1week">{t("deleteAfter1Week")}</SelectItem>
-                    <SelectItem value="1month">{t("deleteAfter1Month")}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/60">
+                    <p className="text-xs uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Private settings</p>
+                    <label className="mt-3 block text-sm font-medium">{t("deleteOption")}</label>
+                    <Select value={deleteOption} onValueChange={setDeleteOption}>
+                      <SelectTrigger className="mt-2">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="now">{t("deleteNow")}</SelectItem>
+                        <SelectItem value="1hour">{t("deleteAfter1Hour")}</SelectItem>
+                        <SelectItem value="1week">{t("deleteAfter1Week")}</SelectItem>
+                        <SelectItem value="1month">{t("deleteAfter1Month")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="mt-3 text-sm text-gray-600 dark:text-slate-300">
+                      This only affects the private saved version.
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 text-sm text-gray-600 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-300">
+                    <p className="font-medium text-slate-900 dark:text-white">Two clear next steps</p>
+                    <p className="mt-2">`Save privately` keeps this between you and the app.</p>
+                    <p className="mt-2">`Share to community` publishes it to the feed below your chosen name.</p>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex gap-3">
+              <div className="mt-6 flex flex-col gap-3 md:flex-row">
                 <Button variant="outline" onClick={() => setStep("mode")}>
                   {t("back")}
                 </Button>
                 <Button onClick={handleSubmit} className="flex-1">
-                  {t("submit")}
+                  Save privately
                 </Button>
-                <Button onClick={handlePost} className="flex-1">
-                  {t("post")}
+                <Button onClick={handlePost} variant="outline" className="flex-1">
+                  Share to community
                 </Button>
               </div>
             </Card>
@@ -829,19 +917,27 @@ export function ConfessionBox() {
             exit={{ opacity: 0, x: 20 }}
           >
             <Card className="p-8">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl">{t("communityStatus")}</h3>
+              <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.22em] text-pink-500">Community feed</p>
+                  <h3 className="mt-2 text-2xl">{t("communityStatus")}</h3>
+                  <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
+                    Read gently. If you need to get something out, go back to private writing first.
+                  </p>
+                </div>
                 <Button
                   variant="outline"
                   onClick={() => setStep("confess")}
                 >
-                  {t("newConfession")}
+                  Back to private writing
                 </Button>
               </div>
 
               <div className="space-y-4">
                 {posts.length === 0 && (
-                  <p className="text-gray-600 dark:text-slate-300">{t("noPostsYet")}</p>
+                  <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-gray-600 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-300">
+                    {t("noPostsYet")}
+                  </div>
                 )}
 
                 {posts.map((post) => {

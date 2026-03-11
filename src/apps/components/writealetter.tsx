@@ -8,6 +8,7 @@ import { Card } from "./UI/card";
 import { Button } from "./UI/button";
 import { Textarea } from "./UI/textarea";
 import { toast } from "sonner";
+import { pushLetterNotifications } from "../lib/notifications";
 
 export function WriteALetter() {
   const [letter, setLetter] = useState("");
@@ -72,6 +73,11 @@ export function WriteALetter() {
     };
     letters.push(newLetter);
     localStorage.setItem("communityLetters", JSON.stringify(letters));
+    pushLetterNotifications({
+      actorId: user?.email,
+      actorName: user?.nickname || t("anonymous"),
+      letterId: newLetter.id,
+    });
 
     toast.success(t("letterSharedSuccess"));
     setLetter("");
